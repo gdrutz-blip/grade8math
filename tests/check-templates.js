@@ -1,0 +1,92 @@
+/* Stress test for question templates. Run:  node tests/check-templates.js
+   Generates many questions from every template and checks that:
+   - the answer is a finite, positive number with no float junk
+   - money answers are sensible to the cent
+   - the formatted answer, typed back in, is marked correct
+   - common typed formats are accepted
+   - steps exist and the final answer appears in the steps */
+"use strict";
+var fs = require("fs"), path = require("path"), vm = require("vm");
+
+var root = path.join(__dirname, "..");
+var ctx = { window: {}, console: console };
+ctx.window.window = ctx.window;
+vm.createContext(ctx);
+function load(f) { vm.runInContext(fs.readFileSync(path.join(root, f), "utf8"), ctx, { filename: f }); }
+load("js/engine.js");
+var unitFiles = fs.readdirSync(path.join(root, "units")).filter(function (f) { return /^unit\d+\.js$/.test(f); });
+unitFiles.forEach(function (f) { load("units/" + f); });
+
+var MP = ctx.window.MP, F = MP.F;
+var N = Number(process.argv[2]) || 3000;
+var failures = 0, total = 0;
+
+function fail(t, q, msg) {
+  failures++;
+  if (failures <= 30) console.log("FAIL " + t.id + ": " + msg + "\n   " + String(q && q.text).replace(/<[^>]+>/g, "").slice(0, 200));
+}
+
+Object.keys(MP.units).forEach(function (uid) {
+  var unit = MP.units[uid];
+  var counts = {};
+  unit.templates.forEach(function (t) {
+    var key = t.lesson + " " + t.level;
+    counts[key] = (counts[key] || 0) + 1;
+    var seen = {};
+    for (var i = 0; i < N; i++) {
+      total++;
+      var q;
+      try { q = t.generate(); } catch (e) { fail(t, null, "threw " + e.message); continue; }
+      seen[q.text] = 1;
+      if (typeof q.answer !== "number" || !isFinite(q.answer)) { fail(t, q, "answer not finite: " + q.answer); continue; }
+      if (q.answer <= 0) fail(t, q, "answer not positive: " + q.answer);
+      if (["money", "percent", "number"].indexOf(q.type) < 0) fail(t, q, "bad type " + q.type);
+      if (!q.steps || q.steps.length < 2) fail(t, q, "too few steps");
+      if (/NaN|undefined|Infinity/.test(q.text + q.steps.join(""))) fail(t, q, "NaN/undefined in text or steps");
+
+      var shown = MP.answerText(q);
+      if (MP.check(shown, q).status !== "correct") fail(t, q, "formatted answer '" + shown + "' not accepted");
+      if (q.type === "money") {
+        var plain = F.roundTo(q.answer, 2).toFixed(2);
+        ["$" + plain, plain, plain + " dollars"].forEach(function (s) {
+          if (MP.check(s, q).status !== "correct") fail(t, q, "money format '" + s + "' not accepted");
+        });
+        var wrong = (F.roundTo(q.answer, 2) + 0.05).toFixed(2);
+        if (MP.check(wrong, q).status === "correct") fail(t, q, "wrong answer accepted");
+      }
+      if (q.type === "percent") {
+        var v = F.num(q.answer, 2);
+        [v, v + "%", v + " %"].forEach(function (s) {
+          if (MP.check(s, q).status !== "correct") fail(t, q, "percent format '" + s + "' not accepted");
+        });
+      }
+      var stepsText = q.steps.join(" ");
+      if (stepsText.indexOf(shown) < 0) fail(t, q, "answer " + shown + " not shown in steps");
+    }
+    var variety = Object.keys(seen).length;
+    if (variety < 10) fail(t, null, "only " + variety + " different questions");
+  });
+  console.log("Unit " + unit.number + " templates per lesson/level:");
+  Object.keys(counts).sort().forEach(function (k) { console.log("  " + k + ": " + counts[k]); });
+});
+
+// Parser spot checks
+var spot = [
+  ["$1,250.50", { type: "money", answer: 1250.5 }, "correct"],
+  ["12,50", { type: "money", answer: 12.5 }, "correct"],
+  ["12.499", { type: "money", answer: 12.5 }, "correct"],
+  ["12.51", { type: "money", answer: 12.5 }, "wrong"],
+  ["0.28", { type: "percent", answer: 28 }, "correct"],
+  ["28%", { type: "percent", answer: 28 }, "correct"],
+  ["0.28%", { type: "percent", answer: 28 }, "wrong"],
+  ["abc", { type: "money", answer: 1 }, "unreadable"],
+  ["", { type: "money", answer: 1 }, "unreadable"]
+];
+spot.forEach(function (s) {
+  total++;
+  var r = MP.check(s[0], s[1]).status;
+  if (r !== s[2]) { failures++; console.log("FAIL parser: '" + s[0] + "' gave " + r + ", expected " + s[2]); }
+});
+
+console.log((failures ? "❌ " + failures + " failures" : "✅ all passed") + " (" + total + " checks)");
+process.exit(failures ? 1 : 0);

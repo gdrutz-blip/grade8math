@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Practice · Smoothie Truck Math</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥤</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html">🥤 Zuri's Smoothie Truck Math</a>
+    <span id="who" class="who"></span>
+  </header>
+
+  <main class="wrap">
+    <div class="levelbar">
+      <span id="lessonLabel" class="lesson-label"></span>
+      <div id="levelSwitch" class="seg" role="group" aria-label="Level"></div>
+    </div>
+
+    <div id="roles" class="roles" hidden></div>
+
+    <article class="card qcard" id="qcard">
+      <div id="qmeta" class="qmeta"></div>
+      <p id="qtext" class="qtext"></p>
+
+      <form id="answerForm" class="answer" autocomplete="off">
+        <label for="answer" class="sr-only">Your answer</label>
+        <input id="answer" placeholder="Your answer" spellcheck="false" autocomplete="off">
+        <button id="checkBtn" class="btn primary" type="submit">Check</button>
+      </form>
+
+      <div id="feedback" class="feedback" aria-live="polite"></div>
+
+      <div class="actions">
+        <button id="stepsBtn" class="btn" type="button">Show me the steps</button>
+        <button id="skipBtn" class="btn ghost" type="button">Skip</button>
+        <button id="nextBtn" class="btn primary" type="button" hidden>Next question →</button>
+      </div>
+
+      <div id="steps" class="steps" hidden></div>
+    </article>
+
+    <section class="stats" aria-label="Your progress">
+      <div><b id="sAtt">0</b><span>attempted</span></div>
+      <div><b id="sCor">0</b><span>correct</span></div>
+      <div><b id="sFirst">0</b><span>first try</span></div>
+    </section>
+  </main>
+
+  <script src="js/engine.js"></script>
+  <script src="units/index.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smoothie Truck Math</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥤</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html">🥤 Zuri's Smoothie Truck Math</a>
+    <span class="school">Grade 8 · Wendat Village PS</span>
+  </header>
+
+  <main class="wrap">
+    <form id="setup" autocomplete="off" novalidate>
+
+      <section class="card">
+        <h2><span class="num">1</span> Who's practising?</h2>
+        <p class="hint">First names only.</p>
+        <div class="names">
+          <label>Your first name
+            <input id="name1" maxlength="20" required>
+          </label>
+          <label>Partner's first name <span class="opt">(optional)</span>
+            <input id="name2" maxlength="20">
+          </label>
+        </div>
+        <p class="hint" id="pairHint" hidden>Working as a pair: one device, and you swap <b>Solver</b> and <b>Checker</b> every question.</p>
+      </section>
+
+      <section class="card">
+        <h2><span class="num">2</span> Pick a unit</h2>
+        <div id="unitList" class="choice-row"></div>
+      </section>
+
+      <section class="card">
+        <h2><span class="num">3</span> Which lessons?</h2>
+        <label class="whole">
+          <input type="checkbox" id="wholeUnit" checked> <b>Whole unit</b> — mix all the lessons
+        </label>
+        <div id="lessonList" class="lesson-grid"></div>
+      </section>
+
+      <section class="card">
+        <h2><span class="num">4</span> Pick a level to start</h2>
+        <p class="hint">You can switch level any time.</p>
+        <div id="levelList" class="level-row"></div>
+        <p id="formError" class="error" role="alert"></p>
+      </section>
+    </form>
+  </main>
+
+  <script src="js/engine.js"></script>
+  <script src="units/index.js"></script>
+  <script src="js/start.js"></script>
+</body>
+</html>
