@@ -79,6 +79,8 @@
     $("mLink").value = link;
     $("openLink").href = link;
     $("openLink").removeAttribute("aria-disabled");
+    $("printLink").href = "print.html?m=" + MP.mission.encode(m);
+    $("printLink").removeAttribute("aria-disabled");
 
     var lessonsTxt = MP.mission.lessonsText(m, unit);
     $("supplyNote").value = [
@@ -100,6 +102,8 @@
     $("supplyNote").value = "";
     $("openLink").removeAttribute("href");
     $("openLink").setAttribute("aria-disabled", "true");
+    $("printLink").removeAttribute("href");
+    $("printLink").setAttribute("aria-disabled", "true");
   }
 
   function copy(text) {

@@ -300,3 +300,7 @@ body.end-open { overflow: hidden; }
 .output h3 { font-size: 1rem; margin: 6px 0; }
 .output textarea { width: 100%; font: inherit; font-size: .9rem; padding: 10px; border: 2px solid var(--line); border-radius: 10px; margin-bottom: 8px; background: #fcfaf7; color: var(--ink); }
 .copied { color: var(--good); font-weight: 700; margin-left: 10px; }
+.print-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0 0 14px; }
+.print-row a.btn { text-decoration: none; display: inline-flex; align-items: center; white-space: nowrap; }
+.print-row a[aria-disabled="true"] { opacity: .4; pointer-events: none; }
+.print-row .hint { margin: 0; flex: 1; min-width: 220px; }
