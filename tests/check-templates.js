@@ -14,6 +14,7 @@ ctx.window.window = ctx.window;
 vm.createContext(ctx);
 function load(f) { vm.runInContext(fs.readFileSync(path.join(root, f), "utf8"), ctx, { filename: f }); }
 load("js/engine.js");
+load("js/calculator.js");
 var unitFiles = fs.readdirSync(path.join(root, "units")).filter(function (f) { return /^unit\d+\.js$/.test(f); });
 unitFiles.forEach(function (f) { load("units/" + f); });
 
@@ -86,6 +87,21 @@ spot.forEach(function (s) {
   total++;
   var r = MP.check(s[0], s[1]).status;
   if (r !== s[2]) { failures++; console.log("FAIL parser: '" + s[0] + "' gave " + r + ", expected " + s[2]); }
+});
+
+// Calculator evaluator checks
+[
+  ["6.49 × 2 × 0.85", 11.033], ["12 ÷ 4 + 3", 6], ["2(3+4)", 14], ["-5 + 2", -3], ["0.1+0.2", 0.3],
+  ["45.20 × 1.13", 51.076], ["(8 − 2) × 1.13", 6.78], ["Ans × 2", 20, 10], ["3 x 4", 12], ["10/4", 2.5]
+].forEach(function (c) {
+  total++;
+  var v = ctx.window.MP.calc.evaluate(c[0], c[2] === undefined ? null : c[2]);
+  if (Math.abs(v - c[1]) > 1e-9) { failures++; console.log("FAIL calc: " + c[0] + " gave " + v); }
+});
+["5 ÷ 0", "2 +", "(3", "3)", "5 % 2", "", "Ans + 1"].forEach(function (bad) {
+  total++;
+  try { ctx.window.MP.calc.evaluate(bad, null); failures++; console.log("FAIL calc: '" + bad + "' should be an error"); }
+  catch (e) { /* expected */ }
 });
 
 console.log((failures ? "❌ " + failures + " failures" : "✅ all passed") + " (" + total + " checks)");

@@ -210,6 +210,13 @@
     newQuestion();
   };
 
+  // Built-in calculator (turn off with ?calc=0 in the link)
+  if (params.get("calc") === "0") {
+    $("calcToggle").hidden = true;
+  } else {
+    MP.calc.mount({ host: $("layout"), toggle: $("calcToggle"), answerBox: $("answer"), layout: $("layout") });
+  }
+
   MP.state = state;
   MP.loadUnits().then(init);
 })(window.MP);
