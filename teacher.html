@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Teacher · Smoothie Truck Math</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥤</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html">🥤 Zuri's Smoothie Truck Math</a>
+    <span class="school">Teacher page</span>
+  </header>
+
+  <main class="wrap">
+    <h1 class="page-title">Make a mission</h1>
+    <p class="hint">Pick lessons and targets. The mission is stored in the link, so there's nothing to log in to — paste the link in your supply note or Google Classroom.</p>
+
+    <form id="builder" autocomplete="off" onsubmit="return false">
+      <section class="card">
+        <h2><span class="num">1</span> Name it <span class="opt">(optional)</span></h2>
+        <input id="mTitle" maxlength="60" placeholder="e.g. Thursday supply — discount and interest">
+      </section>
+
+      <section class="card">
+        <h2><span class="num">2</span> Unit and lessons</h2>
+        <div id="unitList" class="choice-row"></div>
+        <label class="whole"><input type="checkbox" id="wholeUnit" checked> <b>Whole unit</b> — mix all the lessons</label>
+        <div id="lessonList" class="lesson-grid"></div>
+      </section>
+
+      <section class="card">
+        <h2><span class="num">3</span> Targets</h2>
+        <p class="hint">How many questions students must get <b>correct</b> at each level. Use 0 to skip a level.</p>
+        <div id="targets" class="targets"></div>
+        <p class="hint" id="targetTotal"></p>
+      </section>
+
+      <section class="card">
+        <h2><span class="num">4</span> Calculator</h2>
+        <label class="whole"><input type="checkbox" id="calcOn" checked> Students may use the built-in calculator</label>
+        <p class="hint">Turn it off for test prep — the Unit 3 test is no-calculator.</p>
+      </section>
+
+      <section class="card output">
+        <h2><span class="num">5</span> Your mission link</h2>
+        <p id="linkError" class="error" role="alert"></p>
+        <div class="link-row">
+          <input id="mLink" readonly aria-label="Mission link">
+          <button id="copyLink" class="btn primary" type="button">Copy link</button>
+          <a id="openLink" class="btn" target="_blank" rel="noopener">Try it</a>
+        </div>
+        <h3>Supply note <span class="opt">(copy and paste)</span></h3>
+        <textarea id="supplyNote" rows="10" readonly aria-label="Supply note"></textarea>
+        <button id="copyNote" class="btn" type="button">Copy supply note</button>
+        <span id="copied" class="copied" aria-live="polite"></span>
+      </section>
+    </form>
+  </main>
+
+  <script src="js/engine.js"></script>
+  <script src="units/index.js"></script>
+  <script src="js/mission.js"></script>
+  <script src="js/teacher.js"></script>
+</body>
+</html>

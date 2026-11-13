@@ -96,7 +96,8 @@ window.MP = window.MP || {};
   ];
 
   function mount(opts) {
-    var host = opts.host, toggle = opts.toggle, answerBox = opts.answerBox, layout = opts.layout;
+    var host = opts.host, toggle = opts.toggle, layout = opts.layout;
+    var getAnswerBox = opts.getAnswerBox || function () { return opts.answerBox; };
     var lastAns = null, justEvaluated = false;
     var hist = [];
 
@@ -199,7 +200,8 @@ window.MP = window.MP || {};
     el.querySelector(".calc-use").onclick = function () {
       var s = input.value.trim(), v = null;
       try { v = evaluate(s, lastAns); } catch (e) { v = lastAns; }
-      if (v === null || answerBox.disabled) return;
+      var answerBox = getAnswerBox();
+      if (v === null || !answerBox || answerBox.disabled) return;
       answerBox.value = show(v);
       answerBox.focus();
     };

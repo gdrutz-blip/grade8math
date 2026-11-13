@@ -11,7 +11,10 @@
   }
 
   var params = new URLSearchParams(location.search);
+  var mission = MP.mission ? MP.mission.decode(params.get("m")) : null;
   var state = {
+    mission: mission,
+    levelCorrect: { mild: 0, medium: 0, spicy: 0 },
     unit: null,
     lessonIds: [],
     level: params.get("lv") || "mild",
@@ -33,21 +36,126 @@
   setInterval(function () {
     if (document.visibilityState === "visible" && Date.now() - lastActivity < 120000) {
       state.stats.activeSeconds += 15;
+      saveMission();
     }
   }, 15000);
 
   // ---------- Setup ----------
   function init(units) {
-    var uid = params.get("u");
-    state.unit = MP.units[uid] || units[0];
-    if (!state.unit) { $("qtext").textContent = "No units are loaded."; return; }
-    var l = params.get("l") || "all";
+    var uid = mission ? mission.u : params.get("u");
+    state.unit = MP.units[uid] || (mission ? null : units[0]);
+    if (!state.unit) { $("qtext").textContent = mission ? "This mission is for a unit that isn't on the site yet." : "No units are loaded."; return; }
+    var l = mission ? (mission.l === "all" ? "all" : mission.l.join(",")) : (params.get("l") || "all");
     var avail = MP.availableLessons(state.unit).map(function (L) { return L.id; });
     state.lessonIds = l === "all" ? avail : l.split(",").filter(function (id) { return avail.indexOf(id) >= 0; });
     if (!state.lessonIds.length) state.lessonIds = avail;
     if (!MP.LEVELS.some(function (x) { return x.id === state.level; })) state.level = "mild";
 
     $("who").textContent = state.names.join(" & ");
+    if (mission) startMission();
+    renderLevelSwitch();
+    newQuestion();
+    if (mission && missionDone() >= MP.mission.total(mission) && state.completedShown) showEnd();
+  }
+
+  // ---------- Missions ----------
+  function startMission() {
+    var saved = MP.mission.loadProgress(mission, state.names);
+    if (saved) {
+      ["mild", "medium", "spicy"].forEach(function (k) { state.levelCorrect[k] = (saved.levelCorrect && saved.levelCorrect[k]) || 0; });
+      if (saved.stats) Object.keys(state.stats).forEach(function (k) { state.stats[k] = saved.stats[k] || 0; });
+      state.roleFlip = saved.roleFlip || 0;
+      state.completedShown = !!saved.completedShown;
+    }
+    state.level = nextLevel() || MP.LEVELS.filter(function (lv) { return mission.t[lv.id] > 0; }).pop().id;
+    $("missionBar").hidden = false;
+    $("mbTitle").textContent = mission.title || ("Unit " + state.unit.number + " mission");
+    renderMissionBar();
+    renderStats();
+  }
+
+  function missionDone() {
+    return MP.LEVELS.reduce(function (sum, lv) { return sum + Math.min(state.levelCorrect[lv.id], mission.t[lv.id]); }, 0);
+  }
+
+  // first level (mild → medium → spicy) that still needs correct answers
+  function nextLevel() {
+    var lv = MP.LEVELS.filter(function (x) { return mission.t[x.id] > 0 && state.levelCorrect[x.id] < mission.t[x.id]; })[0];
+    return lv ? lv.id : null;
+  }
+
+  function renderMissionBar() {
+    var done = missionDone(), total = MP.mission.total(mission);
+    $("mbCount").textContent = done + " / " + total + " correct";
+    $("mbFill").style.width = Math.round(done / total * 100) + "%";
+    $("mbBar").setAttribute("aria-valuemax", total);
+    $("mbBar").setAttribute("aria-valuenow", done);
+    $("missionBar").classList.toggle("complete", done >= total);
+  }
+
+  function saveMission() {
+    if (!mission) return;
+    MP.mission.saveProgress(mission, state.names, {
+      levelCorrect: state.levelCorrect, stats: state.stats, roleFlip: state.roleFlip, completedShown: !!state.completedShown
+    });
+  }
+
+  function afterMissionResult(correct) {
+    var fb = $("feedback"), lvId = state.q.level;
+    if (correct) state.levelCorrect[lvId]++;
+    saveMission();
+    renderMissionBar();
+    renderLevelSwitch();
+    var total = MP.mission.total(mission);
+    if (correct && missionDone() >= total && !state.completedShown) {
+      state.showEndOnNext = true;
+      $("nextBtn").textContent = "See your mission result 🎉";
+      fb.insertAdjacentHTML("beforeend", "<div class='level-done'>🎉 That's the whole mission!</div>");
+    } else if (correct && state.levelCorrect[lvId] === mission.t[lvId] && nextLevel()) {
+      var nx = MP.LEVELS.filter(function (x) { return x.id === nextLevel(); })[0];
+      state.switchOnNext = nx.id;
+      fb.insertAdjacentHTML("beforeend", "<div class='level-done'>🎉 " + levelLabel(lvId) + " done! Next up: " + nx.icon + " " + nx.label + ".</div>");
+    }
+  }
+
+  function levelLabel(id) { return MP.LEVELS.filter(function (x) { return x.id === id; })[0].label; }
+
+  function showEnd() {
+    var done = missionDone(), total = MP.mission.total(mission);
+    var cls = done >= total ? "green" : done * 2 >= total ? "yellow" : "red";
+    var end = $("endScreen");
+    end.className = "end " + cls;
+    $("endNames").textContent = state.names.join(" & ");
+    $("endTitle").textContent = done >= total ? "Mission complete!" : (cls === "yellow" ? "Mission: halfway there" : "Mission: keep going");
+    $("endScore").textContent = done + " / " + total;
+    $("endLevels").innerHTML = MP.LEVELS.filter(function (lv) { return mission.t[lv.id] > 0; }).map(function (lv) {
+      var got = Math.min(state.levelCorrect[lv.id], mission.t[lv.id]);
+      return "<span>" + lv.icon + " " + lv.label + " " + got + "/" + mission.t[lv.id] + (got >= mission.t[lv.id] ? " ✓" : "") + "</span>";
+    }).join("");
+    var mins = Math.max(1, Math.round(state.stats.activeSeconds / 60));
+    $("endMeta").textContent = new Date().toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric" }) +
+      (mission.title ? " · " + mission.title : "") +
+      " · " + state.stats.attempted + " tried · " + state.stats.firstTry + " right on the first try · " + mins + " min";
+    end.hidden = false;
+    document.body.classList.add("end-open");
+    if (done >= total) state.completedShown = true;
+    saveMission();
+    $("keepGoing").focus();
+  }
+
+  function hideEnd() {
+    $("endScreen").hidden = true;
+    document.body.classList.remove("end-open");
+    var first = inputs()[0];
+    if (first && !first.disabled) first.focus(); else $("nextBtn").focus();
+  }
+
+  function setLevel(id) {
+    state.level = id;
+    if (!mission) {
+      params.set("lv", id);
+      history.replaceState(null, "", "?" + params.toString());
+    }
     renderLevelSwitch();
     newQuestion();
   }
@@ -61,13 +169,14 @@
       b.className = "seg-btn level-" + lv.id + (lv.id === state.level ? " on" : "");
       b.setAttribute("aria-pressed", lv.id === state.level ? "true" : "false");
       b.innerHTML = lv.icon + " " + lv.label;
+      if (mission) {
+        var t = mission.t[lv.id], got = Math.min(state.levelCorrect[lv.id], t);
+        if (!t) { b.disabled = true; b.title = "Not part of this mission"; }
+        else b.innerHTML += " <small class='lvcount'>" + (got >= t ? "✓" : got + "/" + t) + "</small>";
+      }
       b.onclick = function () {
         if (lv.id === state.level) return;
-        state.level = lv.id;
-        params.set("lv", lv.id);
-        history.replaceState(null, "", "?" + params.toString());
-        renderLevelSwitch();
-        newQuestion();
+        setLevel(lv.id);
       };
       box.appendChild(b);
     });
@@ -111,13 +220,58 @@
     $("steps").hidden = true;
     $("steps").innerHTML = "";
     $("stepsBtn").textContent = "Show me the steps";
-    $("answer").value = "";
-    $("answer").disabled = false;
+    renderInputs(q);
     $("checkBtn").disabled = false;
     $("skipBtn").hidden = false;
     $("nextBtn").hidden = true;
+    $("nextBtn").textContent = "Next question →";
     renderRoles();
-    $("answer").focus();
+    inputs()[0].focus();
+  }
+
+  // ---------- Answer boxes: one, or one per part (e.g. "Mango" and "Berry") ----------
+  var lastFocused = null;
+  function inputs() { return Array.prototype.slice.call(document.querySelectorAll("#inputs input")); }
+
+  function renderInputs(q) {
+    var box = $("inputs");
+    box.innerHTML = "";
+    var parts = q.parts || [q];
+    box.className = "inputs" + (q.parts ? " multi" : "");
+    parts.forEach(function (p, i) {
+      var wrap = document.createElement("label");
+      wrap.className = "ans-wrap";
+      if (q.parts) {
+        var cap = document.createElement("span");
+        cap.className = "ans-label";
+        cap.textContent = p.label;
+        wrap.appendChild(cap);
+      }
+      var inp = document.createElement("input");
+      inp.className = "ans-input";
+      inp.autocomplete = "off";
+      inp.spellcheck = false;
+      inp.placeholder = p.type === "ratio" ? "e.g. 2:3" : (q.parts ? "Answer" : "Your answer");
+      inp.setAttribute("aria-label", q.parts ? p.label : "Your answer");
+      inp.addEventListener("focus", function () { lastFocused = inp; });
+      if (i === 0) inp.id = "answer";
+      wrap.appendChild(inp);
+      if (p.unit && p.type === "number") {
+        var u = document.createElement("span");
+        u.className = "ans-unit";
+        u.textContent = p.unit;
+        wrap.appendChild(u);
+      }
+      box.appendChild(wrap);
+    });
+    lastFocused = null;
+  }
+
+  // the box the calculator's "Put in my answer" fills
+  function answerTarget() {
+    var list = inputs();
+    if (lastFocused && list.indexOf(lastFocused) >= 0) return lastFocused;
+    return list.filter(function (i) { return !i.value; })[0] || list[0];
   }
 
   function renderRoles() {
@@ -135,12 +289,13 @@
       state.stats.correct++;
       if (state.tries === 0 && !state.stepsSeen) state.stats.firstTry++;
     }
-    $("answer").disabled = true;
+    inputs().forEach(function (i) { i.disabled = true; });
     $("checkBtn").disabled = true;
     $("skipBtn").hidden = true;
     $("nextBtn").hidden = false;
     $("nextBtn").focus();
     renderStats();
+    if (mission) afterMissionResult(correct);
     if (typeof MP.onResult === "function") {
       MP.onResult({ correct: correct, firstTry: correct && state.tries === 0 && !state.stepsSeen, q: state.q, state: state });
     }
@@ -149,9 +304,21 @@
   function onCheck(e) {
     e.preventDefault();
     if (state.done || !state.q) return;
-    var input = $("answer").value;
-    var res = MP.check(input, state.q);
     var fb = $("feedback");
+    var parts = state.q.parts || [state.q];
+    var boxes = inputs();
+    var results = parts.map(function (p, i) {
+      if (!boxes[i].value.trim()) return { status: "unreadable", message: parts.length > 1 ? "Fill in every box." : "Type your answer first." };
+      return MP.check(boxes[i].value, p);
+    });
+    var unreadable = results.filter(function (r) { return r.status === "unreadable"; })[0];
+    var note = results.map(function (r) { return r.note; }).filter(Boolean)[0];
+    var res = unreadable || (results.every(function (r) { return r.status === "correct"; }) ? { status: "correct" } :
+      { status: "wrong", message: results.map(function (r) { return r.message; }).filter(Boolean)[0] });
+    boxes.forEach(function (b, i) {
+      b.classList.remove("ok", "no");
+      if (parts.length > 1 && results[i].status !== "unreadable") b.classList.add(results[i].status === "correct" ? "ok" : "no");
+    });
 
     if (res.status === "unreadable") {
       fb.className = "feedback info";
@@ -161,7 +328,8 @@
     if (res.status === "correct") {
       fb.className = "feedback good";
       fb.innerHTML = "✅ <b>Correct!</b> " + MP.answerText(state.q) +
-        (state.tries === 0 && !state.stepsSeen ? " — first try!" : "");
+        (state.tries === 0 && !state.stepsSeen ? " — first try!" : "") +
+        (note ? "<div class='note'>💡 " + note + "</div>" : "");
       $("qcard").className = "card qcard good";
       finish(true);
       return;
@@ -169,13 +337,15 @@
     state.tries++;
     if (state.tries < MAX_TRIES) {
       fb.className = "feedback warn";
-      fb.innerHTML = "❌ <b>Not quite.</b> " + (res.message || "Check your work and try once more.") +
+      fb.innerHTML = "❌ <b>Not quite.</b> " + (res.message || (parts.length > 1 ? "Fix the box marked in red." : "Check your work and try once more.")) +
         " <span class='note'>(1 try left)</span>";
-      $("answer").select();
+      var firstWrong = boxes.filter(function (b, i) { return results[i].status !== "correct"; })[0] || boxes[0];
+      firstWrong.select();
       return;
     }
     fb.className = "feedback bad";
-    fb.innerHTML = "❌ The answer is <b>" + MP.answerText(state.q) + "</b>. Read the steps below, then try a new one.";
+    fb.innerHTML = (res.message ? "❌ " + res.message + "<br>" : "❌ ") +
+      "The answer is <b>" + MP.answerText(state.q) + "</b>. Read the steps below, then try a new one.";
     $("qcard").className = "card qcard bad";
     showSteps(true);
     finish(false);
@@ -202,7 +372,14 @@
 
   $("answerForm").addEventListener("submit", onCheck);
   $("stepsBtn").onclick = function () { showSteps(false); };
-  $("nextBtn").onclick = function () { state.roleFlip++; newQuestion(); };
+  $("nextBtn").onclick = function () {
+    state.roleFlip++;
+    if (state.showEndOnNext) { state.showEndOnNext = false; newQuestion(); showEnd(); return; }
+    if (state.switchOnNext) { var id = state.switchOnNext; state.switchOnNext = null; setLevel(id); }
+    else newQuestion();
+  };
+  $("finishBtn").onclick = function () { if (mission) showEnd(); };
+  $("keepGoing").onclick = hideEnd;
   $("skipBtn").onclick = function () {
     if (state.done) return;
     finish(false);
@@ -211,10 +388,10 @@
   };
 
   // Built-in calculator (turn off with ?calc=0 in the link)
-  if (params.get("calc") === "0") {
+  if (params.get("calc") === "0" || (mission && !mission.calc)) {
     $("calcToggle").hidden = true;
   } else {
-    MP.calc.mount({ host: $("layout"), toggle: $("calcToggle"), answerBox: $("answer"), layout: $("layout") });
+    MP.calc.mount({ host: $("layout"), toggle: $("calcToggle"), getAnswerBox: answerTarget, layout: $("layout") });
   }
 
   MP.state = state;

@@ -16,6 +16,16 @@
   <main class="wrap">
     <form id="setup" autocomplete="off" novalidate>
 
+      <section class="card mission-card" id="missionCard" hidden>
+        <p class="mission-kicker">🎯 Your mission</p>
+        <h2 id="missionTitle"></h2>
+        <ul class="mission-facts">
+          <li><b>Get correct:</b> <span id="missionTargets"></span></li>
+          <li><b>Lessons:</b> <span id="missionLessons"></span></li>
+          <li><b>Calculator:</b> <span id="missionCalc"></span></li>
+        </ul>
+      </section>
+
       <section class="card">
         <h2><span class="num">1</span> Who's practising?</h2>
         <p class="hint">First names only.</p>
@@ -30,12 +40,12 @@
         <p class="hint" id="pairHint" hidden>Working as a pair: one device, and you swap <b>Solver</b> and <b>Checker</b> every question.</p>
       </section>
 
-      <section class="card">
+      <section class="card free-only">
         <h2><span class="num">2</span> Pick a unit</h2>
         <div id="unitList" class="choice-row"></div>
       </section>
 
-      <section class="card">
+      <section class="card free-only">
         <h2><span class="num">3</span> Which lessons?</h2>
         <label class="whole">
           <input type="checkbox" id="wholeUnit" checked> <b>Whole unit</b> — mix all the lessons
@@ -43,17 +53,23 @@
         <div id="lessonList" class="lesson-grid"></div>
       </section>
 
-      <section class="card">
+      <section class="card free-only">
         <h2><span class="num">4</span> Pick a level to start</h2>
         <p class="hint">You can switch level any time.</p>
         <div id="levelList" class="level-row"></div>
-        <p id="formError" class="error" role="alert"></p>
       </section>
+
+      <section class="card mission-only" hidden>
+        <button id="startMission" class="btn primary big" type="button">Start the mission →</button>
+      </section>
+      <p id="formError" class="error" role="alert"></p>
     </form>
+    <p class="footer-link"><a href="teacher.html">Teacher page</a></p>
   </main>
 
   <script src="js/engine.js"></script>
   <script src="units/index.js"></script>
+  <script src="js/mission.js"></script>
   <script src="js/start.js"></script>
 </body>
 </html>
