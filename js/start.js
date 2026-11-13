@@ -20,8 +20,8 @@
       b.type = "button";
       b.className = "choice" + (u === unit ? " selected" : "");
       b.setAttribute("aria-pressed", u === unit ? "true" : "false");
-      b.innerHTML = "<b>Unit " + u.number + "</b><span>" + u.title + "</span>";
-      b.onclick = function () { unit = u; renderUnits(); renderLessons(); };
+      b.innerHTML = "<b>Unit " + u.number + "</b><span>" + u.title + "</span>" + (u.story ? "<span class='story'>" + u.story + "</span>" : "");
+      b.onclick = function () { unit = u; store("mp_unit", u.id); $("wholeUnit").checked = true; renderUnits(); renderLessons(); };
       box.appendChild(b);
     });
   }
@@ -116,7 +116,7 @@
 
   MP.loadUnits().then(function (list) {
     units = list;
-    unit = units[0];
+    unit = MP.units[load("mp_unit")] || units[units.length - 1];
     renderUnits();
     renderLessons();
     renderLevels();

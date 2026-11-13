@@ -38,10 +38,13 @@
   function blanks(q) {
     if (q.parts) {
       return "<div class='p-answer'>" + q.parts.map(function (p) {
-        return "<span>" + p.label + ": <span class='blank'></span>" + (p.unit && p.type === "number" ? " " + p.unit : "") + "</span>";
+        return "<span>" + p.label + ": <span class='blank'></span>" + (p.unit && (p.type === "number" || p.type === "fraction") ? " " + p.unit : "") + "</span>";
       }).join("") + "</div>";
     }
-    return "<div class='p-answer'><span>Answer: <span class='blank'></span>" + (q.unit && q.type === "number" ? " " + q.unit : "") + "</span></div>";
+    if (q.type === "choice") return "<div class='p-answer'><span>Circle one:&nbsp;&nbsp; " + q.options.map(function (o) { return o.replace(/</g, "&lt;"); }).join("&nbsp;&nbsp;&nbsp;&nbsp;") + "</span></div>";
+    if (q.type === "order") return "<div class='p-answer'><span>Order: <span class='blank long'></span></span></div>";
+    if (q.type === "sci") return "<div class='p-answer'><span>Answer: <span class='blank'></span> × 10<sup><span class='blank short'></span></sup></span></div>";
+    return "<div class='p-answer'><span>Answer: <span class='blank'></span>" + (q.unit && (q.type === "number" || q.type === "fraction") ? " " + q.unit : "") + "</span></div>";
   }
 
   function header(title, sub) {
@@ -52,7 +55,7 @@
 
   function render() {
     var title = mission.title || "Unit " + unit.number + " practice";
-    var sub = "Zuri's Smoothie Truck · " + MP.mission.lessonsText(mission, unit) + (mission.calc ? "" : " · No calculator");
+    var sub = (unit.story ? unit.story + " · " : "") + MP.mission.lessonsText(mission, unit) + (mission.calc ? "" : " · No calculator");
     var html = header(title, sub), keyHtml = "<header class='p-head'><h1>Answer key — " + title + "</h1><p class='p-sub'>" + sub + "</p></header>";
     var num = 0, lastLevel = null;
     var showSteps = $("showSteps").checked;
