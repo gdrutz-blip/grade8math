@@ -122,6 +122,29 @@
   $("calcOn").onchange = update;
   $("wholeUnit").onchange = function () { renderLessons(); update(); };
 
+  // ---------- Tracking status + test row ----------
+  (function () {
+    var st = $("trackStatus");
+    if (!MP.tracker.enabled()) {
+      st.innerHTML = "⚪ <b>Not connected yet.</b> The site works fully without it; results just aren't saved anywhere.";
+      $("testRow").hidden = true;
+      return;
+    }
+    var missing = MP.tracker.missingFields();
+    st.innerHTML = "🟢 <b>Connected to your Google Form.</b>" +
+      (missing.length ? " <span class='error'>These fields weren't found in the link: " + missing.join(", ") + "</span>" : "");
+    $("testRow").onclick = function () {
+      var id = "test-" + MP.tracker.newSessionId();
+      MP.tracker.send({
+        SESSION: id, NAMES: "TEST (teacher page)", DATE: MP.tracker.today(), UNIT: "Unit 3", LESSONS: "L6",
+        LEVELS: "Mild 1/1", ATTEMPTED: 1, CORRECT: 1, FIRSTTRY: 1, MINUTES: 1, MISSION: "Test row"
+      }).then(function (ok) {
+        $("testResult").textContent = ok ? "Sent ✓ — look for session " + id + " in your Sheet (it can take a few seconds)."
+          : "Couldn't reach Google. Check the internet connection and try again.";
+      });
+    };
+  })();
+
   MP.loadUnits().then(function (list) {
     units = list;
     unit = units[0];

@@ -15,6 +15,8 @@
   var state = {
     mission: mission,
     levelCorrect: { mild: 0, medium: 0, spicy: 0 },
+    byLevel: { mild: { tried: 0, correct: 0 }, medium: { tried: 0, correct: 0 }, spicy: { tried: 0, correct: 0 } },
+    sessionId: null,
     unit: null,
     lessonIds: [],
     level: params.get("lv") || "mild",
@@ -53,10 +55,61 @@
 
     $("who").textContent = state.names.join(" & ");
     if (mission) startMission();
+    setupSession();
     renderLevelSwitch();
     newQuestion();
     if (mission && missionDone() >= MP.mission.total(mission) && state.completedShown) showEnd();
   }
+
+  // ---------- Tracking (Google Form → Sheet; does nothing if not set up) ----------
+  var lastSentMinutes = -1;
+  function setupSession() {
+    if (!state.sessionId) {
+      var key = "mp_sid_" + state.unit.id + "_" + state.names.join("&").toLowerCase() + "_" + state.lessonIds.join(".");
+      try { state.sessionId = sessionStorage.getItem(key); } catch (e) { /* ignore */ }
+      if (!state.sessionId) {
+        state.sessionId = MP.tracker ? MP.tracker.newSessionId() : String(Date.now());
+        try { sessionStorage.setItem(key, state.sessionId); } catch (e) { /* ignore */ }
+      }
+      saveMission();
+    }
+  }
+
+  function minutesActive() { return Math.round(state.stats.activeSeconds / 60); }
+
+  function buildRecord() {
+    var all = MP.availableLessons(state.unit).map(function (L) { return L.id; });
+    var lessons = state.lessonIds.length === all.length ? "All" : state.lessonIds.join(", ");
+    var levels = MP.LEVELS.filter(function (lv) { return state.byLevel[lv.id].tried > 0; }).map(function (lv) {
+      return lv.label + " " + state.byLevel[lv.id].correct + "/" + state.byLevel[lv.id].tried;
+    }).join(" · ");
+    return {
+      SESSION: state.sessionId,
+      NAMES: state.names.join(" & "),
+      DATE: MP.tracker.today(),
+      UNIT: "Unit " + state.unit.number,
+      LESSONS: lessons,
+      LEVELS: levels || "none yet",
+      ATTEMPTED: state.stats.attempted,
+      CORRECT: state.stats.correct,
+      FIRSTTRY: state.stats.firstTry,
+      MINUTES: minutesActive(),
+      MISSION: mission ? (mission.title || "Mission") + " — " + missionDone() + "/" + MP.mission.total(mission) +
+        (missionDone() >= MP.mission.total(mission) ? " complete" : "") : "Free practice"
+    };
+  }
+
+  function track(closing) {
+    if (!MP.tracker || !MP.tracker.enabled() || !state.unit || !state.stats.attempted) return;
+    lastSentMinutes = minutesActive();
+    MP.tracker.send(buildRecord(), closing);
+  }
+
+  // tab closing or hidden: send the latest minutes if they changed since the last send
+  window.addEventListener("pagehide", function () { if (minutesActive() !== lastSentMinutes) track(true); });
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "hidden" && minutesActive() !== lastSentMinutes) track(true);
+  });
 
   // ---------- Missions ----------
   function startMission() {
@@ -66,6 +119,8 @@
       if (saved.stats) Object.keys(state.stats).forEach(function (k) { state.stats[k] = saved.stats[k] || 0; });
       state.roleFlip = saved.roleFlip || 0;
       state.completedShown = !!saved.completedShown;
+      if (saved.byLevel) ["mild", "medium", "spicy"].forEach(function (k) { if (saved.byLevel[k]) state.byLevel[k] = saved.byLevel[k]; });
+      if (saved.sessionId) state.sessionId = saved.sessionId;
     }
     state.level = nextLevel() || MP.LEVELS.filter(function (lv) { return mission.t[lv.id] > 0; }).pop().id;
     $("missionBar").hidden = false;
@@ -96,7 +151,8 @@
   function saveMission() {
     if (!mission) return;
     MP.mission.saveProgress(mission, state.names, {
-      levelCorrect: state.levelCorrect, stats: state.stats, roleFlip: state.roleFlip, completedShown: !!state.completedShown
+      levelCorrect: state.levelCorrect, stats: state.stats, roleFlip: state.roleFlip, completedShown: !!state.completedShown,
+      byLevel: state.byLevel, sessionId: state.sessionId
     });
   }
 
@@ -140,6 +196,7 @@
     document.body.classList.add("end-open");
     if (done >= total) state.completedShown = true;
     saveMission();
+    track();
     $("keepGoing").focus();
   }
 
@@ -285,6 +342,8 @@
   function finish(correct) {
     state.done = true;
     state.stats.attempted++;
+    state.byLevel[state.q.level].tried++;
+    if (correct) state.byLevel[state.q.level].correct++;
     if (correct) {
       state.stats.correct++;
       if (state.tries === 0 && !state.stepsSeen) state.stats.firstTry++;
@@ -296,6 +355,7 @@
     $("nextBtn").focus();
     renderStats();
     if (mission) afterMissionResult(correct);
+    track();
     if (typeof MP.onResult === "function") {
       MP.onResult({ correct: correct, firstTry: correct && state.tries === 0 && !state.stepsSeen, q: state.q, state: state });
     }
