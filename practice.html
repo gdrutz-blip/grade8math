@@ -13,10 +13,14 @@
     <span id="who" class="who"></span>
   </header>
 
-  <main class="wrap">
+  <main class="wrap" id="layout">
+   <div class="col-main">
     <div class="levelbar">
       <span id="lessonLabel" class="lesson-label"></span>
-      <div id="levelSwitch" class="seg" role="group" aria-label="Level"></div>
+      <div class="levelbar-right">
+        <button id="calcToggle" class="btn calc-toggle" type="button" aria-pressed="false">🧮 Calculator</button>
+        <div id="levelSwitch" class="seg" role="group" aria-label="Level"></div>
+      </div>
     </div>
 
     <div id="roles" class="roles" hidden></div>
@@ -47,10 +51,12 @@
       <div><b id="sCor">0</b><span>correct</span></div>
       <div><b id="sFirst">0</b><span>first try</span></div>
     </section>
+   </div>
   </main>
 
   <script src="js/engine.js"></script>
   <script src="units/index.js"></script>
+  <script src="js/calculator.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
