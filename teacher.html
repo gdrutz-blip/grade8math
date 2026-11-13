@@ -57,11 +57,21 @@
         <span id="copied" class="copied" aria-live="polite"></span>
       </section>
     </form>
+
+    <h1 class="page-title">Results tracking</h1>
+    <section class="card" id="trackCard">
+      <p id="trackStatus"></p>
+      <button id="testRow" class="btn" type="button">Send a test row</button>
+      <span id="testResult" class="copied" aria-live="polite"></span>
+      <p class="hint">Results go to the Google Sheet linked to your Google Form, after every question. Setup steps: <code>docs/TRACKING.md</code> in the GitHub repo.</p>
+    </section>
   </main>
 
   <script src="js/engine.js"></script>
   <script src="units/index.js"></script>
   <script src="js/mission.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/tracker.js"></script>
   <script src="js/teacher.js"></script>
 </body>
 </html>
