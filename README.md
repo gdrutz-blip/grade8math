@@ -10,7 +10,10 @@ Plain HTML, CSS and JavaScript — no build step.
 |---|---|
 | `index.html` + `js/start.js` | Student start: names → unit → lessons → level |
 | `practice.html` + `js/app.js` | Question screen, tries, steps, level switch, partner roles |
-| `js/engine.js` | Random numbers, $ / % formatting, answer checking |
+| `teacher.html` + `js/teacher.js` | Mission builder: lessons, targets, calculator on/off → link + supply note |
+| `js/mission.js` | Packs a mission into the link; saves progress on the device |
+| `js/calculator.js` | Built-in calculator (hidden when a mission turns it off) |
+| `js/engine.js` | Random numbers, $ / % formatting, answer checking, common-mistake messages |
 | `units/index.js` | List of unit files (add a line here for a new unit) |
 | `units/unit3.js` | Unit 3 lessons and question templates |
 | `tests/check-templates.js` | Generates thousands of questions per template and checks the answers |
