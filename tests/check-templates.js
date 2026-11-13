@@ -20,7 +20,7 @@ unitFiles.forEach(function (f) { load("units/" + f); });
 
 var MP = ctx.window.MP, F = MP.F;
 var N = Number(process.argv[2]) || 3000;
-var failures = 0, total = 0;
+var failures = 0, total = 0, mistakeClash = 0;
 
 function checkOne(t, q, p, stepsText) {
   var types = ["money", "percent", "number", "ratio"];
@@ -38,6 +38,14 @@ function checkOne(t, q, p, stepsText) {
     return;
   }
   if (typeof p.answer !== "number" || !isFinite(p.answer)) { fail(t, q, "answer not finite: " + p.answer); return; }
+  // each listed mistake must be a different answer from the right one, and must trigger its message
+  (p.mistakes || []).forEach(function (mk) {
+    if (typeof mk.answer !== "number" || !isFinite(mk.answer)) { fail(t, q, "mistake not finite"); return; }
+    var typed = p.type === "money" ? F.roundTo(mk.answer, 2).toFixed(2) : F.num(mk.answer, p.dp === undefined ? 2 : p.dp);
+    var r = MP.check(typed, p);
+    if (r.status === "correct") { if (!p.mistakeMayEqual) mistakeClash++; return; }
+    if (r.message !== mk.message && r.status === "wrong" && !r.mistake) fail(t, q, "mistake " + typed + " did not give its message");
+  });
   if (p.answer <= 0) fail(t, q, "answer not positive: " + p.answer);
   var shown = MP.answerText(p);
   if (MP.check(shown, p).status !== "correct") fail(t, q, "formatted answer '" + shown + "' not accepted");
@@ -129,5 +137,6 @@ spot.forEach(function (s) {
   catch (e) { /* expected */ }
 });
 
+console.log("Mistake answers that happened to equal the right answer (skipped): " + mistakeClash);
 console.log((failures ? "❌ " + failures + " failures" : "✅ all passed") + " (" + total + " checks)");
 process.exit(failures ? 1 : 0);

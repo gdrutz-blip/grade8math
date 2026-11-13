@@ -201,6 +201,7 @@
       return MP.check(boxes[i].value, p);
     });
     var unreadable = results.filter(function (r) { return r.status === "unreadable"; })[0];
+    var note = results.map(function (r) { return r.note; }).filter(Boolean)[0];
     var res = unreadable || (results.every(function (r) { return r.status === "correct"; }) ? { status: "correct" } :
       { status: "wrong", message: results.map(function (r) { return r.message; }).filter(Boolean)[0] });
     boxes.forEach(function (b, i) {
@@ -216,7 +217,8 @@
     if (res.status === "correct") {
       fb.className = "feedback good";
       fb.innerHTML = "✅ <b>Correct!</b> " + MP.answerText(state.q) +
-        (state.tries === 0 && !state.stepsSeen ? " — first try!" : "");
+        (state.tries === 0 && !state.stepsSeen ? " — first try!" : "") +
+        (note ? "<div class='note'>💡 " + note + "</div>" : "");
       $("qcard").className = "card qcard good";
       finish(true);
       return;
@@ -231,7 +233,8 @@
       return;
     }
     fb.className = "feedback bad";
-    fb.innerHTML = "❌ The answer is <b>" + MP.answerText(state.q) + "</b>. Read the steps below, then try a new one.";
+    fb.innerHTML = (res.message ? "❌ " + res.message + "<br>" : "❌ ") +
+      "The answer is <b>" + MP.answerText(state.q) + "</b>. Read the steps below, then try a new one.";
     $("qcard").className = "card qcard bad";
     showSteps(true);
     finish(false);

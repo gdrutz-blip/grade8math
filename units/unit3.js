@@ -17,8 +17,8 @@
   var R = MP.R, F = MP.F;
 
   // ---------- Story pieces ----------
-  var SMOOTHIES = ["Mango Tango", "Berry Blast", "Green Machine", "Pineapple Punch",
-    "Strawberry Sunrise", "Choco-Banana", "Peach Breeze", "Tropical Storm"];
+  // smoothie names from the class materials (wall chart, handouts)
+  var SMOOTHIES = ["Berry Blast", "Green Machine", "Mango Rush", "Peach Fizz", "Sunset", "Tropical Twist"];
   var CUSTOMERS = ["Amir", "Jada", "Priya", "Mateo", "Sofia", "Kai", "Leila", "Noah",
     "Aiyana", "Wei", "Tariq", "Hannah", "Diego", "Mei", "Omar", "Chloe", "Ravi", "Zainab"];
   var HST = 13;
@@ -70,6 +70,7 @@
       text: "Zuri is having a sale: <b>" + d + "% off</b> every smoothie. A " + drink +
         " smoothie is normally <b>" + m(price) + "</b>. What is the sale price?",
       answer: sale, type: "money",
+      mistakes: [{ answer: off, message: "That's the discount — the amount you save. The sale price is what's left: take it away." }],
       steps: [
         "Find the discount: " + d + "% of " + m(price) + " = " + m(off) +
           (d === 10 ? " (10% → move the decimal one place left)" :
@@ -109,6 +110,7 @@
       text: who + "'s order at Zuri's Smoothie Truck comes to <b>" + m(sub) + "</b> before tax. " +
         "Add 13% HST. What is the total?",
       answer: total, type: "money",
+      mistakes: [{ answer: sub + 0.13, message: "13% is not 13 cents. Find 13% of the price (× 0.13), or multiply by 1.13." }, { answer: tax, message: "That's just the tax. Add it on to find the total." }],
       steps: [
         "Build 13% from 10% + 3%: 10% of " + m(sub) + " = " + raw(sub / 10) +
           ", 1% = " + raw(sub / 100) + ", so 3% = " + raw(sub * 3 / 100),
@@ -151,6 +153,7 @@
       text: who + " buys <b>" + qty + " " + drink + "</b> smoothies at <b>" + m(price) + "</b> each. " +
         "Zuri gives <b>" + d + "% off</b>, then 13% HST is added. What does " + who + " pay?",
       answer: total, type: "money",
+      mistakes: [{ answer: sub * 1.13, message: "Did you take the discount? Discount first, then tax." }, { answer: sale, message: "That's the sale price. Now add the 13% HST." }, { answer: sub * (1.13 - d / 100), message: "Never add or subtract the percents. Discount first (× " + F.dec(100 - d) + "), then tax (× 1.13)." }, { answer: sale + 0.13, message: "13% is not 13 cents. Find 13% of the price (× 0.13), or multiply by 1.13." }],
       steps: [
         "Order cost: " + qty + " × " + m(price) + " = " + m(sub),
         "<b>Discount first.</b> You pay " + (100 - d) + "%: " + m(sub) + " × " + F.dec(100 - d) + " = " + raw(sale) + keep(sale),
@@ -170,6 +173,7 @@
       text: "Zuri's truck caters " + who + "'s team practice. The bill is <b>" + m(sub) + "</b> before tax. " +
         "They add 13% HST and a <b>" + t + "% tip</b> on the pre-tax amount. What is the total they pay?",
       answer: total, type: "money",
+      mistakes: [{ answer: sub * 1.13 * (1 + t / 100), message: "The tip is on the pre-tax amount, not the bill with tax." }, { answer: sub * (1 + t / 100), message: "Don't forget the 13% HST." }],
       steps: [
         "Tip on the pre-tax amount: " + m(sub) + " × " + F.dec(t) + " = " + raw(tip),
         "Tax on the pre-tax amount: " + m(sub) + " × 0.13 = " + raw(tax),
@@ -208,6 +212,7 @@
       text: "Zuri sells a reusable smoothie cup for <b>" + m(price) + "</b>. Today it's <b>" + d + "% off</b>. " +
         who + " buys one. How much <b>tax</b> (13% HST) is charged? (Just the tax, not the total.)",
       answer: tax, type: "money",
+      mistakes: [{ answer: price * 0.13, message: "Tax is charged on the SALE price. Take the discount first." }, { answer: sale * 1.13, message: "That's the total. The question asks for just the tax." }],
       steps: [
         "<b>Discount first.</b> You pay " + (100 - d) + "%: " + m(price) + " × " + F.dec(100 - d) + " = " + m(sale),
         "Tax is 13% of the <b>sale</b> price: " + m(sale) + " × 0.13 = " + raw(tax),
@@ -227,6 +232,7 @@
       text: who + "'s receipt from Zuri's truck got wet. The only thing left is the total: <b>" + m(total) +
         "</b>, which includes 13% HST. What was the price <b>before tax</b>?",
       answer: pre, type: "money",
+      mistakes: [{ answer: total * 0.87, message: "Taking 13% off doesn't undo the tax — the 13% was of the smaller, pre-tax price. Divide by 1.13." }],
       steps: [
         "Work backwards. The total is the pre-tax price × 1.13.",
         "So: pre-tax price × 1.13 = " + m(total),
@@ -251,10 +257,11 @@
       steps: [
         "Work backwards. " + d + "% off means " + who + " paid " + (100 - d) + "% of the original.",
         "Original × " + F.dec(100 - d) + " = " + m(sale),
-        "Undo it by dividing: " + m(sale) + " ÷ " + F.dec(100 - d) + " = <b>" + m(orig) + "</b>",
+        "Undo it by dividing: " + m(sale) + " ÷ " + F.dec(100 - d) + " = <b>" + m(orig) + "</b>"].concat(chainStep(100 - d, sale, F.moneyRaw)).concat([
         "Check: " + m(orig) + " × " + F.dec(100 - d) + " = " + m(sale) + " ✓",
         "<span class='note'>Adding " + d + "% back on does <b>not</b> work — the discount was " + d + "% of the bigger, original price.</span>"
-      ]
+      ]),
+      mistakes: [{ answer: sale * (100 + d) / 100, message: "Adding " + d + "% back on doesn't undo the discount — it was " + d + "% of the bigger, original price." }]
     };
   });
 
@@ -297,6 +304,7 @@
       text: "Zuri has a sale: <b>" + a + "% off</b>, and loyalty-card members get <b>another " + b + "% off</b> the sale price. " +
         who + " says that's " + (a + b) + "% off altogether. What is the <b>real</b> total percent discount?",
       answer: off, type: "percent", dp: 1,
+      mistakes: [{ answer: a + b, message: "The percents don't add: the second discount is taken off the SALE price, which is smaller." }],
       steps: [
         a + "% off means you pay " + (100 - a) + "% → × " + F.dec(100 - a),
         "Another " + b + "% off the <b>new</b> price → × " + F.dec(100 - b),
@@ -316,7 +324,19 @@
   function pl(n, word) { return c(n) + " " + word + (n === 1 ? "" : "s"); }
   function ratio(a) { return a.join(":"); }
   function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  // "45% = 36, so 5% = 4, so 100% = 4 × 20 = 80" (the class method for finding the whole).
+  // Returns "" when the in-between number isn't tidy, so the step can be left out.
+  function chain(p, val, fmt) {
+    fmt = fmt || c;
+    var st = p % 10 === 0 ? 10 : p % 5 === 0 ? 5 : p % 12.5 === 0 ? 12.5 : 1;
+    var one = val / (p / st);
+    if (Math.abs(F.roundTo(one, 2) - one) > 1e-9) return "";
+    return F.num(p) + "% = " + fmt(val) + (p !== st ? ", so " + F.num(st) + "% = " + fmt(val) + " ÷ " + F.num(p / st) + " = " + fmt(one) : "") +
+      ", so 100% = " + fmt(one) + " × " + F.num(100 / st) + " = " + fmt(one * 100 / st);
+  }
+  function chainStep(p, val, fmt) { var ch = chain(p, val, fmt); return ch ? ["Or build it: " + ch] : []; }
   function fin(x) { return F.moneyRaw(x) === F.money(x) ? "<b>" + F.money(x) + "</b>" : F.moneyRaw(x) + " → <b>" + F.money(x) + "</b>"; }
+  function c2(x) { return F.roundTo(x, 2); }
   function exact2(x) { return Math.abs(F.roundTo(x, 2) - x) < 1e-9; }
   // keep trying until a generated set of numbers passes the test
   function until(make, ok) { for (var i = 0; i < 500; i++) { var v = make(); if (ok(v)) return v; } return make(); }
@@ -332,6 +352,7 @@
       text: "Zuri's " + drink + " uses " + f[0] + " and " + f[1] + " in the ratio <b>" + ratio(r) + "</b>. " +
         "She uses <b>" + pl(A, "scoop") + " of " + f[0] + "</b>. How many scoops of " + f[1] + " does she need?",
       answer: B, type: "number", unit: "scoops",
+      mistakes: [{ answer: r[1] + A - r[0], message: "You added the same number to both parts — that changes the mix. Multiply both parts by the same number." }],
       steps: [
         cap(f[0]) + " went from " + r[0] + " to " + A + ". That's × " + k + ".",
         "Do the same to <b>both parts</b>: " + r[1] + " × " + k + " = <b>" + c(B) + "</b> scoops of " + f[1] + ".",
@@ -347,6 +368,7 @@
       text: "This morning Zuri sold <b>" + A + " " + d[0] + "</b> and <b>" + B + " " + d[1] + "</b> smoothies. " +
         "Write the ratio of " + d[0] + " to " + d[1] + " in simplest form.",
       answer: [r[0], r[1]], type: "ratio",
+      mistakes: [{ answer: [r[1], r[0]], message: "Check the order: the question names " + d[0] + " first." }],
       steps: [
         "Write it in the same order as the question: " + A + ":" + B,
         "Find the biggest number that divides both: " + k,
@@ -363,12 +385,14 @@
       text: "Zuri makes a fruit mix with <b>" + total + " scoops</b> of fruit. The ratio of " + f[0] + " to " + f[1] +
         " is <b>" + ratio(r) + "</b>. How many scoops of each fruit?",
       parts: [
-        { label: cap(f[0]), answer: r[0] * k, type: "number", unit: "scoops" },
-        { label: cap(f[1]), answer: r[1] * k, type: "number", unit: "scoops" }
+        { label: cap(f[0]), answer: r[0] * k, type: "number", unit: "scoops",
+          mistakes: [{ answer: r[1] * k, message: "Check the order: " + f[0] + " is the " + r[0] + " in " + ratio(r) + "." }, { answer: k, message: "That's one share. How many shares is " + f[0] + "?" }] },
+        { label: cap(f[1]), answer: r[1] * k, type: "number", unit: "scoops",
+          mistakes: [{ answer: r[0] * k, message: "Check the order: " + f[1] + " is the " + r[1] + " in " + ratio(r) + "." }] }
       ],
       steps: [
-        "<b>Add the parts first:</b> " + r[0] + " + " + r[1] + " = " + (r[0] + r[1]) + " parts",
-        "One part: " + total + " ÷ " + (r[0] + r[1]) + " = " + k + " scoops",
+        "<b>Add the parts first:</b> " + r[0] + " + " + r[1] + " = " + (r[0] + r[1]) + " shares",
+        "One share: " + total + " ÷ " + (r[0] + r[1]) + " = " + k + " scoops",
         cap(f[0]) + ": " + r[0] + " × " + k + " = <b>" + c(r[0] * k) + "</b>",
         cap(f[1]) + ": " + r[1] + " × " + k + " = <b>" + c(r[1] * k) + "</b>",
         "Check: " + r[0] * k + " + " + r[1] * k + " = " + total + " ✓"
@@ -379,7 +403,7 @@
   add("L1-mild-batches", "L1", "mild", function () {
     var a = R.int(2, 5), b = R.int(1, 4), n = R.int(2, 6);
     return {
-      text: "One jug of Zuri's Choco-Banana uses <b>" + pl(a, "banana") + "</b> and <b>" + pl(b, "cup") + " of milk</b>. " +
+      text: "One jug of Zuri's smoothie base uses <b>" + pl(a, "banana") + "</b> and <b>" + pl(b, "cup") + " of milk</b>. " +
         "She makes <b>" + n + " jugs</b>. How many bananas and cups of milk does she need?",
       parts: [
         { label: "Bananas", answer: a * n, type: "number" },
@@ -415,14 +439,14 @@
   add("L1-med-split3", "L1", "medium", function () {
     var r = R.pick([[1, 2, 3], [2, 3, 5], [1, 3, 4], [2, 2, 1], [3, 4, 5], [1, 2, 5], [2, 3, 3]]);
     var k = R.int(3, 9), sum = r[0] + r[1] + r[2], total = sum * k;
-    var names = R.shuffle(["Mango Tango", "Berry Blast", "Green Machine", "Peach Breeze"]).slice(0, 3);
+    var names = R.shuffle(["Mango Rush", "Berry Blast", "Green Machine", "Peach Fizz"]).slice(0, 3);
     return {
       text: "Zuri sold <b>" + total + " smoothies</b> at a festival. The ratio of " + names.join(" to ") +
         " was <b>" + ratio(r) + "</b>. How many of each did she sell?",
       parts: names.map(function (nm, i) { return { label: nm, answer: r[i] * k, type: "number" }; }),
       steps: [
-        "<b>Add the parts first:</b> " + r.join(" + ") + " = " + sum + " parts",
-        "One part: " + total + " ÷ " + sum + " = " + k,
+        "<b>Add the parts first:</b> " + r.join(" + ") + " = " + sum + " shares",
+        "One share: " + total + " ÷ " + sum + " = " + k,
         names.map(function (nm, i) { return nm + ": " + r[i] + " × " + k + " = <b>" + c(r[i] * k) + "</b>"; }).join("; "),
         "Check: " + r.map(function (x) { return x * k; }).join(" + ") + " = " + total + " ✓"
       ]
@@ -436,12 +460,13 @@
       text: "Zuri has <b>" + total + " frozen fruit packs</b>. The ratio of " + f[0] + " packs to " + f[1] + " packs is <b>" +
         ratio(r) + "</b>. How many more " + f[1] + " packs than " + f[0] + " packs are there?",
       answer: (r[1] - r[0]) * k, type: "number", unit: "packs",
+      mistakes: [{ answer: r[1] * k, message: "That's how many " + f[1] + " packs. The question asks how many MORE." }, { answer: k, message: "That's one share. How many shares is the difference?" }],
       steps: [
-        "<b>Add the parts first:</b> " + r[0] + " + " + r[1] + " = " + (r[0] + r[1]) + " parts",
-        "One part: " + total + " ÷ " + (r[0] + r[1]) + " = " + k + " packs",
+        "<b>Add the parts first:</b> " + r[0] + " + " + r[1] + " = " + (r[0] + r[1]) + " shares",
+        "One share: " + total + " ÷ " + (r[0] + r[1]) + " = " + k + " packs",
         cap(f[0]) + ": " + r[0] + " × " + k + " = " + r[0] * k + ", " + f[1] + ": " + r[1] + " × " + k + " = " + r[1] * k,
         "Difference: " + r[1] * k + " − " + r[0] * k + " = <b>" + c((r[1] - r[0]) * k) + "</b>",
-        "Shortcut: the difference is " + (r[1] - r[0]) + " part" + (r[1] - r[0] > 1 ? "s" : "") + " = " + (r[1] - r[0]) + " × " + k
+        "Shortcut: the difference is " + (r[1] - r[0]) + " share" + (r[1] - r[0] > 1 ? "s" : "") + " = " + (r[1] - r[0]) + " × " + k
       ]
     };
   });
@@ -453,9 +478,10 @@
       text: "The ratio of " + d[0] + " to " + d[1] + " smoothies sold today is <b>" + ratio(r) + "</b>. " +
         "Zuri sold <b>" + A + " " + d[0] + "</b>. How many smoothies did she sell altogether (both kinds)?",
       answer: total, type: "number", unit: "smoothies",
+      mistakes: [{ answer: r[1] * k, message: "That's just the " + d[1] + ". The question asks for both kinds altogether." }],
       steps: [
-        d[0] + " is " + r[0] + " part" + (r[0] > 1 ? "s" : "") + " = " + A + ", so one part = " + A + " ÷ " + r[0] + " = " + k,
-        "Altogether is " + r[0] + " + " + r[1] + " = " + (r[0] + r[1]) + " parts",
+        d[0] + " is " + r[0] + " share" + (r[0] > 1 ? "s" : "") + " = " + A + ", so one share = " + A + " ÷ " + r[0] + " = " + k,
+        "Altogether is " + r[0] + " + " + r[1] + " = " + (r[0] + r[1]) + " shares",
         (r[0] + r[1]) + " × " + k + " = <b>" + c(total) + "</b> smoothies"
       ]
     };
@@ -469,8 +495,8 @@
         "There are <b>" + diff + " more " + f[1] + " bags</b> than " + f[0] + " bags. How many bags are there altogether?",
       answer: total, type: "number", unit: "bags",
       steps: [
-        "Work backwards. The difference is " + r[1] + " − " + r[0] + " = " + (r[1] - r[0]) + " part" + (r[1] - r[0] > 1 ? "s" : "") + ".",
-        "Those parts = " + diff + " bags, so one part = " + diff + " ÷ " + (r[1] - r[0]) + " = " + k,
+        "Work backwards. The difference is " + r[1] + " − " + r[0] + " = " + (r[1] - r[0]) + " share" + (r[1] - r[0] > 1 ? "s" : "") + ".",
+        "Those shares = " + diff + " bags, so one share = " + diff + " ÷ " + (r[1] - r[0]) + " = " + k,
         "Altogether is " + (r[0] + r[1]) + " parts: " + (r[0] + r[1]) + " × " + k + " = <b>" + c(total) + "</b> bags",
         "Check: " + r[0] * k + " and " + r[1] * k + " differ by " + diff + " ✓"
       ]
@@ -489,7 +515,7 @@
         "How many cups of banana should she <b>add</b>?",
       answer: v.r[1] * v.k - v.have, type: "number", unit: "cups",
       steps: [
-        "Strawberries are the " + v.r[0] + " part" + (v.r[0] > 1 ? "s" : "") + ": " + v.r[0] + " → " + S + " is × " + v.k + ".",
+        "Strawberries are the " + v.r[0] + " share" + (v.r[0] > 1 ? "s" : "") + ": " + v.r[0] + " → " + S + " is × " + v.k + ".",
         "Banana must be " + v.r[1] + " × " + v.k + " = " + need + " cups.",
         "She has " + v.have + ", so add " + need + " − " + v.have + " = <b>" + c(v.add) + "</b> cups"
       ]
@@ -508,7 +534,7 @@
         "Then she sold <b>" + v.e + " more large</b> and no more small. What is the new ratio of large to small, in simplest form?",
       answer: [v.L / v.g, v.S / v.g], type: "ratio",
       steps: [
-        "<b>Add the parts first:</b> " + v.r[0] + " + " + v.r[1] + " = " + (v.r[0] + v.r[1]) + " parts; one part = " + total + " ÷ " + (v.r[0] + v.r[1]) + " = " + v.k,
+        "<b>Add the parts first:</b> " + v.r[0] + " + " + v.r[1] + " = " + (v.r[0] + v.r[1]) + " shares; one share = " + total + " ÷ " + (v.r[0] + v.r[1]) + " = " + v.k,
         "Large: " + v.r[0] + " × " + v.k + " = " + v.r[0] * v.k + "; small: " + v.r[1] + " × " + v.k + " = " + v.S,
         "Add the new large cups: " + v.r[0] * v.k + " + " + v.e + " = " + v.L,
         "New ratio " + v.L + ":" + v.S + ". Divide both by " + v.g + ": <b>" + (v.L / v.g) + ":" + (v.S / v.g) + "</b>"
@@ -525,8 +551,8 @@
         "Zuri gets <b>" + m(diff) + " more</b> than " + helper + ". How much money was in the tip jar?",
       answer: total, type: "money",
       steps: [
-        "Work backwards. Zuri has " + r[0] + " − " + r[1] + " = " + (r[0] - r[1]) + " more part" + (r[0] - r[1] > 1 ? "s" : "") + ".",
-        "One part: " + m(diff) + " ÷ " + (r[0] - r[1]) + " = " + m(k),
+        "Work backwards. Zuri has " + r[0] + " − " + r[1] + " = " + (r[0] - r[1]) + " more share" + (r[0] - r[1] > 1 ? "s" : "") + ".",
+        "One share: " + m(diff) + " ÷ " + (r[0] - r[1]) + " = " + m(k),
         "The jar is " + r[0] + " + " + r[1] + " = " + (r[0] + r[1]) + " parts: " + (r[0] + r[1]) + " × " + m(k) + " = <b>" + m(total) + "</b>",
         "Check: Zuri " + m(r[0] * k) + ", " + helper + " " + m(r[1] * k) + ", difference " + m(diff) + " ✓"
       ]
@@ -543,6 +569,7 @@
     return {
       text: "Zuri pays <b>" + m(total) + " for " + n + " " + thing[0] + "</b>. How much is that per " + thing[1] + "?",
       answer: u, type: "money",
+      mistakes: [{ answer: n / total, message: "That's " + thing[1] + "s per dollar. For the price of one, divide the price by the number of items." }],
       steps: [
         "Divide by the thing you want “per”: per " + thing[1] + ", so ÷ " + n + ".",
         m(total) + " ÷ " + n + " = <b>" + m(u) + "</b> per " + thing[1]
@@ -597,6 +624,7 @@
       text: "Pack A has <b>" + v.nA + " bananas for " + m(v.nA * v.uA) + "</b>. Pack B has <b>" + v.nB + " bananas for " + m(v.nB * v.uB) +
         "</b>. Which is the better buy? Enter the <b>price per banana</b> of the better buy.",
       answer: best, type: "money",
+      mistakes: [{ answer: Math.max(v.uA, v.uB), message: "That's the unit price of the more expensive pack. Which one is cheaper per banana?" }],
       steps: [
         "Find the unit price of each (divide by the number of bananas).",
         "Pack A: " + m(v.nA * v.uA) + " ÷ " + v.nA + " = " + m(v.uA) + " per banana",
@@ -624,6 +652,7 @@
     return {
       text: "Zuri's blender pours <b>" + c(r * s) + " mL in " + s + " seconds</b>. At that rate, how many mL does it pour <b>per minute</b>?",
       answer: r * 60, type: "number", unit: "mL",
+      mistakes: [{ answer: r, message: "That's mL per SECOND. A minute is 60 seconds." }],
       steps: [
         "First the rate per second: " + c(r * s) + " ÷ " + s + " = " + c(r) + " mL per second",
         "A minute is 60 seconds: " + c(r) + " × 60 = <b>" + c(r * 60) + "</b> mL per minute"
@@ -714,6 +743,7 @@
     return {
       text: "<b>" + a + " smoothies</b> use <b>" + per * a + " bananas</b>. How many bananas do <b>" + n + " smoothies</b> use?",
       answer: per * n, type: "number", unit: "bananas",
+      mistakes: [{ answer: per * a + n - a, message: "Scale, don't add: find the bananas for 1 smoothie, then multiply." }],
       steps: [
         "Same order on both sides: smoothies/bananas → " + a + "/" + per * a + " = " + n + "/?",
         "Find the value for 1: " + per * a + " ÷ " + a + " = " + per + " bananas per smoothie",
@@ -738,7 +768,7 @@
   add("L3-mild-money", "L3", "mild", function () {
     var u = R.pick([2.5, 3, 3.5, 4, 4.5, 5]), n1 = R.int(2, 4), n2 = R.int(5, 9);
     return {
-      text: "<b>" + n1 + " Peach Breeze smoothies cost " + m(u * n1) + "</b>. How much do <b>" + n2 + "</b> cost?",
+      text: "<b>" + n1 + " Peach Fizz smoothies cost " + m(u * n1) + "</b>. How much do <b>" + n2 + "</b> cost?",
       answer: u * n2, type: "money",
       steps: [
         "Find the value for 1: " + m(u * n1) + " ÷ " + n1 + " = " + m(u),
@@ -793,6 +823,7 @@
       text: "On Zuri's route map, <b>1 cm = " + c(s) + " km</b>. The route to the farmers' market is <b>" + c(cm) + " cm</b> on the map. " +
         "How many kilometres is the real route?",
       answer: s * cm, type: "number", unit: "km",
+      mistakes: [{ answer: c2(s + cm - 1), message: "Scale, don't add: every 1 cm is " + c(s) + " km, so multiply." }],
       steps: [
         "Same order: cm/km → 1/" + c(s) + " = " + c(cm) + "/?",
         "1 cm → " + c(cm) + " cm is × " + c(cm) + ", so " + c(s) + " × " + c(cm) + " = <b>" + c(s * cm) + "</b> km"
@@ -806,7 +837,7 @@
       return { a: a, c: cc, x: x, b: x * cc / a };
     }, function (v) { return v.a !== v.c && exact2(v.b) && !Number.isInteger(v.a / v.c) && !Number.isInteger(v.c / v.a); });
     return {
-      text: "Zuri sets up this proportion to scale her Tropical Storm recipe: <b>x / " + v.a + " = " + c(v.b) + " / " + v.c + "</b>. Solve for x.",
+      text: "Zuri sets up this proportion to scale her Tropical Twist recipe: <b>x / " + v.a + " = " + c(v.b) + " / " + v.c + "</b>. Solve for x.",
       answer: v.x, type: "number",
       steps: [
         "Value for 1 on the right: " + c(v.b) + " ÷ " + v.c + " = " + F.num(v.b / v.c, 4),
@@ -907,6 +938,7 @@
     return {
       text: "Of the <b>" + whole + " customers</b> at Zuri's truck this week, <b>" + p + "%</b> brought their own cup. How many customers was that?",
       answer: whole * p / 100, type: "number", unit: "customers",
+      mistakes: [{ answer: whole / p, message: "Dividing by " + p + " doesn't find " + p + "%. Find 10% (÷ 10) first, then build " + p + "%." }],
       steps: [
         "10% of " + whole + " = " + c(whole / 10),
         build(p, whole),
@@ -948,6 +980,7 @@
     return {
       text: "Zuri's truck used <b>" + whole + " cups of fruit</b> today. <b>" + p + "%</b> of it was mango. How many cups of mango was that?",
       answer: whole * p / 100, type: "number", unit: "cups",
+      mistakes: [{ answer: whole / p, message: "Dividing by " + p + " doesn't find " + p + "%. Build it from 10% and 5%." }],
       steps: [
         "Build " + p + "% from 10%, 5%, 25% and 50%.",
         "10% of " + whole + " = " + c(whole / 10) + ", 5% = " + c(whole / 20),
@@ -1009,9 +1042,9 @@
         "How many customers did she have on Friday?",
       answer: v.W, type: "number", unit: "customers",
       steps: [
-        "Work backwards: " + c(v.p) + "% of the total = " + part,
-        "1% = " + part + " ÷ " + c(v.p) + " = " + F.num(part / v.p, 4),
-        "100% = " + F.num(part / v.p, 4) + " × 100 = <b>" + c(v.W) + "</b> customers",
+        "Work backwards: " + c(v.p) + "% of the total = " + part + ". Step down to a benchmark, then build up to 100%.",
+        chain(v.p, part) ? chain(v.p, part).replace(/= ([\d,.]+)$/, "= <b>$1</b>") + " customers" :
+          "1% = " + part + " ÷ " + c(v.p) + " = " + F.num(part / v.p, 4) + ", so 100% = <b>" + c(v.W) + "</b> customers",
         "Check: " + c(v.p) + "% of " + v.W + " = " + part + " ✓"
       ]
     };
@@ -1091,6 +1124,7 @@
     return {
       text: "Zuri sold <b>" + N + " smoothies</b> on Monday. On Tuesday (it rained) she sold <b>" + p + "% fewer</b>. How many did she sell on Tuesday?",
       answer: n2, type: "number", unit: "smoothies",
+      mistakes: [{ answer: N * p / 100, message: "That's how many FEWER. Take it away from " + N + "." }],
       steps: [
         "Down " + p + "% means " + (100 - p) + "% are left → × " + F.dec(100 - p),
         N + " × " + F.dec(100 - p) + " = <b>" + c(n2) + "</b>",
@@ -1106,6 +1140,7 @@
     return {
       text: "The price of a large smoothie went from <b>" + m(v.O) + "</b> to <b>" + m(N) + "</b>. What is the percent increase?",
       answer: v.p, type: "percent",
+      mistakes: [{ answer: (N - v.O) / N * 100, message: "Divide the change by the ORIGINAL price, not the new one." }],
       steps: [
         "Change: " + m(N) + " − " + m(v.O) + " = " + m(N - v.O),
         "Change ÷ <b>ORIGINAL</b>: " + m(N - v.O) + " ÷ " + m(v.O) + " = " + F.num((N - v.O) / v.O, 4),
@@ -1120,6 +1155,7 @@
     return {
       text: "Zuri had <b>" + O + " customers</b> last Saturday and <b>" + N + "</b> this Saturday. What is the percent decrease?",
       answer: p, type: "percent",
+      mistakes: [{ answer: (O - N) / N * 100, message: "Divide the change by the ORIGINAL number (last Saturday), not the new one." }],
       steps: [
         "Change: " + O + " − " + N + " = " + c(O - N),
         "Change ÷ <b>ORIGINAL</b> (last Saturday): " + c(O - N) + " ÷ " + O + " = " + F.num((O - N) / O, 4),
@@ -1135,6 +1171,7 @@
     return {
       text: "Zuri sold <b>" + v.O + " smoothies</b> in May and <b>" + v.N + "</b> in June. What is the percent increase? <b>Round to one decimal place.</b>",
       answer: p, type: "percent", dp: 1,
+      mistakes: [{ answer: F.roundTo((v.N - v.O) / v.N * 100, 1), message: "Divide the change by the ORIGINAL (May), not the new amount." }],
       steps: [
         "Change: " + v.N + " − " + v.O + " = " + (v.N - v.O),
         "Change ÷ <b>ORIGINAL</b> (May): " + (v.N - v.O) + " ÷ " + v.O + " = " + F.num((v.N - v.O) / v.O, 5),
@@ -1180,6 +1217,7 @@
       text: "A bag of chia seeds went from <b>" + v.O + " servings</b> to <b>" + v.N + " servings</b> after the company changed the size. " +
         "What is the percent decrease? <b>Round to one decimal place.</b>",
       answer: p, type: "percent", dp: 1,
+      mistakes: [{ answer: F.roundTo((v.O - v.N) / v.N * 100, 1), message: "Divide the change by the ORIGINAL amount, not the new one." }],
       steps: [
         "Change: " + v.O + " − " + v.N + " = " + (v.O - v.N),
         "Change ÷ <b>ORIGINAL</b>: " + (v.O - v.N) + " ÷ " + v.O + " = " + F.num((v.O - v.N) / v.O, 5),
@@ -1196,10 +1234,11 @@
       answer: O, type: "money",
       steps: [
         "Work backwards: original × " + F.dec(100 + p) + " = " + m(N),
-        "Undo by dividing: " + m(N) + " ÷ " + F.dec(100 + p) + " = <b>" + m(O) + "</b>",
+        "Undo by dividing: " + m(N) + " ÷ " + F.dec(100 + p) + " = <b>" + m(O) + "</b>"].concat(chainStep(100 + p, N, F.moneyRaw)).concat([
         "Check: " + m(O) + " × " + F.dec(100 + p) + " = " + m(N) + " ✓",
         "<span class='note'>Taking " + p + "% off " + m(N) + " does <b>not</b> work: the " + p + "% was of the smaller, original price.</span>"
-      ]
+      ]),
+      mistakes: [{ answer: N * (100 - p) / 100, message: "Taking " + p + "% off the new price doesn't undo it — the " + p + "% was of the smaller, original price." }]
     };
   });
 
@@ -1210,6 +1249,7 @@
       text: "Zuri raised her prices by <b>" + p + "%</b>, then a month later lowered them by <b>" + p + "%</b>. " + who +
         " says the prices are back where they started. What is the <b>overall percent decrease</b>?",
       answer: 100 - keep, type: "percent", dp: 2,
+      mistakes: [{ answer: 0, message: "The two changes don't cancel: the decrease is taken from the bigger, raised price." }],
       steps: [
         "Up " + p + "% → × " + F.dec(100 + p) + "; down " + p + "% → × " + F.dec(100 - p),
         "Together: " + F.dec(100 + p) + " × " + F.dec(100 - p) + " = " + F.dec(keep),
@@ -1226,6 +1266,7 @@
       text: "Zuri put the " + R.pick(SMOOTHIES) + " on sale, <b>" + d + "% off</b> its usual price of <b>" + m(O) + "</b>. " +
         "After the sale, by what <b>percent</b> must the sale price go up to get back to " + m(O) + "? <b>Round to one decimal place.</b>",
       answer: p, type: "percent", dp: 1,
+      mistakes: [{ answer: d, message: "Going back up, the ORIGINAL is the sale price, which is smaller — so the percent is bigger than " + d + "%." }],
       steps: [
         "Sale price: " + m(O) + " × " + F.dec(100 - d) + " = " + m(low),
         "Going back up, the <b>ORIGINAL</b> is now the sale price " + m(low) + ".",
@@ -1245,9 +1286,10 @@
       answer: v.O, type: "number", unit: "customers",
       steps: [
         "Work backwards: " + v.p + "% fewer → last month × " + F.dec(100 - v.p) + " = " + N,
-        "Undo by dividing: " + N + " ÷ " + F.dec(100 - v.p) + " = <b>" + c(v.O) + "</b>",
+        "Undo by dividing: " + N + " ÷ " + F.dec(100 - v.p) + " = <b>" + c(v.O) + "</b>"].concat(chainStep(100 - v.p, N)).concat([
         "Check: " + v.O + " × " + F.dec(100 - v.p) + " = " + N + " ✓"
-      ]
+      ]),
+      mistakes: [{ answer: N * (100 + v.p) / 100, message: "Adding " + v.p + "% back on doesn't undo it — the " + v.p + "% was of last month's bigger number." }]
     };
   });
 
@@ -1264,6 +1306,7 @@
       text: "Zuri puts <b>" + m(P) + "</b> in a savings account that pays <b>" + r + "% simple interest</b> per year. " +
         "How much interest does she earn in <b>" + pl(t, "year") + "</b>?",
       answer: I, type: "money",
+      mistakes: [{ answer: P * r * t, message: "Write the rate as a decimal: " + r + "% = " + F.dec(r) + ", not " + r + "." }],
       steps: [
         "I = P × r × t, with the rate as a decimal: " + r + "% = " + F.dec(r),
         "I = " + m(P) + " × " + F.dec(r) + " × " + t,
@@ -1279,6 +1322,7 @@
       text: "Zuri saves <b>" + m(P) + "</b> at <b>" + r + "% simple interest</b> per year for <b>" + t + " years</b>. " +
         "How much will be in the account at the end (savings + interest)?",
       answer: P + I, type: "money",
+      mistakes: [{ answer: I, message: "That's the interest. Add the principal back on for the total." }],
       steps: [
         "I = P × r × t = " + m(P) + " × " + F.dec(r) + " × " + t + " = " + m(I),
         "Total = P + I = " + m(P) + " + " + m(I) + " = <b>" + m(P + I) + "</b>"
@@ -1293,6 +1337,7 @@
       text: "Zuri's cousin lends her <b>" + m(P) + "</b> at <b>" + r + "% simple interest</b> per year. She pays it back after <b>" + t * 12 +
         " months</b>. How much interest does she owe?",
       answer: I, type: "money",
+      mistakes: [{ answer: P * r / 100 * t * 12, message: "Time must be in YEARS: " + t * 12 + " months = " + t + " years." }],
       steps: [
         "Time must be in <b>years</b>: " + t * 12 + " months ÷ 12 = " + t + " years",
         "Rate as a decimal: " + r + "% = " + F.dec(r),
@@ -1308,6 +1353,7 @@
       text: "Zuri borrows <b>" + m(P) + "</b> for a new freezer at <b>" + r + "% simple interest</b> per year for <b>" + mo + " months</b>. " +
         "How much interest will she pay?",
       answer: I, type: "money",
+      mistakes: [{ answer: P * r / 100 * mo, message: "Time must be in YEARS: " + mo + " months ÷ 12 = " + c(mo / 12) + " years." }],
       steps: [
         "Time in <b>years</b>: " + mo + " ÷ 12 = " + c(mo / 12) + " years",
         "I = " + m(P) + " × " + F.dec(r) + " × " + c(mo / 12) + " = " + F.moneyRaw(I),
@@ -1338,6 +1384,7 @@
       text: "Zuri takes a loan of <b>" + m(P) + "</b> to repaint her truck, at <b>" + c(r) + "% simple interest</b> per year for <b>" + c(t) + " years</b>. " +
         "What is the total she must pay back?",
       answer: P + I, type: "money",
+      mistakes: [{ answer: I, message: "That's just the interest. Add the loan back on for the total she pays." }],
       steps: [
         "I = P × r × t = " + m(P) + " × " + F.dec(r) + " × " + c(t) + " = " + F.moneyRaw(I),
         "Total = P + I = " + m(P) + " + " + F.moneyRaw(I) + " = <b>" + m(P + I) + "</b>"
@@ -1368,8 +1415,8 @@
       text: "Zuri invested <b>" + m(P) + "</b> for <b>" + t + " years</b> and earned <b>" + m(I) + "</b> in simple interest. What was the interest <b>rate</b> per year?",
       answer: r, type: "percent", dp: 2,
       steps: [
-        "I = P × r × t, so " + m(I) + " = " + m(P) + " × r × " + t,
-        m(P) + " × " + t + " = " + m(P * t) + ", so r = " + m(I) + " ÷ " + m(P * t) + " = " + F.dec(r),
+        "Find one year's interest first: " + m(I) + " ÷ " + t + " years = " + m(I / t) + " a year",
+        "Rate = one year's interest ÷ principal: " + m(I / t) + " ÷ " + m(P) + " = " + F.dec(r),
         "As a percent: " + F.dec(r) + " × 100 = <b>" + F.pct(r) + "</b>"
       ]
     };
@@ -1447,8 +1494,8 @@
       answer: r[1] * k, type: "money",
       steps: [
         "<b>Step 1 — profit:</b> " + m(revenue) + " − " + m(costs) + " = " + m(profit),
-        "<b>Step 2 — split:</b> add the parts first: " + r[0] + " + " + r[1] + " = " + (r[0] + r[1]) + "; one part = " + m(profit) + " ÷ " + (r[0] + r[1]) + " = " + m(k),
-        helper + " gets " + r[1] + " part" + (r[1] > 1 ? "s" : "") + ": <b>" + m(r[1] * k) + "</b>"
+        "<b>Step 2 — split:</b> add the parts first: " + r[0] + " + " + r[1] + " = " + (r[0] + r[1]) + " shares; one share = " + m(profit) + " ÷ " + (r[0] + r[1]) + " = " + m(k),
+        helper + " gets " + r[1] + " share" + (r[1] > 1 ? "s" : "") + ": <b>" + m(r[1] * k) + "</b>"
       ]
     };
   });
@@ -1457,13 +1504,13 @@
     var T = R.int(2, 12) * 40, r = R.pick([[1, 2], [2, 1], [1, 1], [2, 3]]);
     var berry = T / 4, rest = T - berry, part = rest / (r[0] + r[1]);
     return {
-      text: "Zuri sold <b>" + T + " smoothies</b>. <b>25%</b> were Berry Blast. The rest were Mango Tango and Green Machine in the ratio <b>" +
+      text: "Zuri sold <b>" + T + " smoothies</b>. <b>25%</b> were Berry Blast. The rest were Mango Rush and Green Machine in the ratio <b>" +
         ratio(r) + "</b>. How many Green Machine smoothies did she sell?",
       answer: r[1] * part, type: "number", unit: "smoothies",
       steps: [
         "<b>Step 1 — percent:</b> 25% of " + T + " = " + c(berry) + " Berry Blast",
         "<b>Step 2 — the rest:</b> " + T + " − " + c(berry) + " = " + c(rest),
-        "<b>Step 3 — ratio:</b> " + r[0] + " + " + r[1] + " = " + (r[0] + r[1]) + " parts; one part = " + c(rest) + " ÷ " + (r[0] + r[1]) + " = " + c(part),
+        "<b>Step 3 — ratio:</b> " + r[0] + " + " + r[1] + " = " + (r[0] + r[1]) + " shares; one share = " + c(rest) + " ÷ " + (r[0] + r[1]) + " = " + c(part),
         "Green Machine: " + r[1] + " × " + c(part) + " = <b>" + c(r[1] * part) + "</b>"
       ]
     };
@@ -1505,7 +1552,7 @@
         helper + " saves <b>" + s + "%</b> of their share. How much does " + helper + " save?",
       answer: saved, type: "money",
       steps: [
-        "<b>Step 1 — ratio:</b> " + r[0] + " + " + r[1] + " = " + (r[0] + r[1]) + " parts; one part = " + m(total) + " ÷ " + (r[0] + r[1]) + " = " + m(k),
+        "<b>Step 1 — ratio:</b> " + r[0] + " + " + r[1] + " = " + (r[0] + r[1]) + " shares; one share = " + m(total) + " ÷ " + (r[0] + r[1]) + " = " + m(k),
         helper + "'s share: " + r[1] + " × " + m(k) + " = " + m(share),
         "<b>Step 2 — percent:</b> " + s + "% of " + m(share) + " = " + m(share) + " × " + F.dec(s) + " = <b>" + m(saved) + "</b>"
       ]
@@ -1536,6 +1583,7 @@
       text: "Each smoothie costs Zuri <b>" + m(v.cost) + "</b> to make and sells for <b>" + m(v.price) + "</b>. Running the truck costs <b>" + m(v.fixed) +
         "</b> a day. What is the <b>fewest</b> smoothies she must sell in a day to make at least <b>" + m(v.goal) + "</b> profit?",
       answer: n, type: "number", unit: "smoothies",
+      mistakes: [{ answer: n - 1, message: "Check it: " + c(n - 1) + " smoothies isn't quite enough. Round UP." }, { answer: Math.ceil(v.goal / each), message: "Don't forget the truck cost: she needs the goal PLUS the " + m(v.fixed) + "." }],
       steps: [
         "<b>Step 1 — profit per smoothie:</b> " + m(v.price) + " − " + m(v.cost) + " = " + m(each),
         "<b>Step 2 — money needed:</b> truck cost + goal = " + m(v.fixed) + " + " + m(v.goal) + " = " + m(need),
@@ -1554,6 +1602,7 @@
       text: "Zuri borrowed <b>" + m(v.P) + "</b> for a new blender at <b>" + v.r + "% simple interest</b> per year for <b>" + pl(v.t, "year") + "</b>. " +
         "She makes <b>" + m(v.each) + " profit</b> on each smoothie. How many smoothies must she sell to pay back the loan <b>and</b> interest?",
       answer: n, type: "number", unit: "smoothies",
+      mistakes: [{ answer: n - 1, message: "Check it: " + c(n - 1) + " smoothies isn't quite enough. Round UP." }, { answer: Math.ceil(v.P / v.each - 1e-9), message: "Don't forget the interest: she pays back the loan PLUS interest." }],
       steps: [
         "<b>Step 1 — interest:</b> " + m(v.P) + " × " + F.dec(v.r) + " × " + v.t + " = " + m(I),
         "<b>Step 2 — total owed:</b> " + m(v.P) + " + " + m(I) + " = " + m(A),
@@ -1587,14 +1636,334 @@
     }, function (v) { return exact2(v.kg * v.perKg); });
     var bag = v.kg * v.perKg, kgUsed = v.g * v.n / 1000, cost = kgUsed * v.perKg;
     return {
-      text: "A <b>" + c(v.kg) + " kg bag of frozen mango costs " + m(bag) + "</b>. Each Mango Tango uses <b>" + v.g + " g</b> of mango. " +
-        "What does the mango cost for <b>" + v.n + " Mango Tango smoothies</b>?",
+      text: "A <b>" + c(v.kg) + " kg bag of frozen mango costs " + m(bag) + "</b>. Each Mango Rush uses <b>" + v.g + " g</b> of mango. " +
+        "What does the mango cost for <b>" + v.n + " Mango Rush smoothies</b>?",
       answer: cost, type: "money",
       steps: [
         "<b>Step 1 — unit rate:</b> " + m(bag) + " ÷ " + c(v.kg) + " kg = " + m(v.perKg) + " per kg",
         "<b>Step 2 — mango needed:</b> " + v.n + " × " + v.g + " g = " + c(v.g * v.n) + " g = " + c(kgUsed) + " kg",
         "<b>Step 3 — cost:</b> " + c(kgUsed) + " × " + m(v.perKg) + " = " + fin(cost)
       ]
+    };
+  });
+
+  // =====================================================================
+  // "Find the mistake" questions (like the Medium sections and the unit test)
+  // A student's wrong work is shown; the student enters the CORRECT answer.
+  // =====================================================================
+  var CRITICS = ["Kian", "Mila", "Anika", "Callum", "Owen", "Quinn", "Hassan", "Bea", "Rafe", "Jonah", "Talia", "Nico", "Rhea", "Sofia"];
+  function says(who, words) { return who + " says: “" + words + "” "; }
+  var FIX = "<b>Find the mistake.</b> What is the correct answer?";
+
+  add("L1-med-mistake", "L1", "medium", function () {
+    var who = R.pick(CRITICS);
+    if (R.int(0, 1) === 0) {
+      // added instead of multiplying
+      var r = until(function () { return R.pick(COPRIME); }, function (r) { return r[0] < r[1] || r[0] > 1; });
+      var k = R.int(3, 6), A = r[0] * k, wrong = r[1] + (A - r[0]);
+      return {
+        text: says(who, r[0] + ":" + r[1] + " = " + A + ":?. " + A + " is " + (A - r[0]) + " more than " + r[0] + ", so I add " + (A - r[0]) +
+          " to " + r[1] + " and get " + wrong + ".") + FIX,
+        answer: r[1] * k, type: "number",
+        mistakes: [{ answer: wrong, message: "That's " + who + "'s answer. Adding the same number to both parts changes the mix." }],
+        steps: [
+          "<b>The mistake:</b> " + who + " ADDED " + (A - r[0]) + " to both parts. Adding changes the mix.",
+          r[0] + " → " + A + " is × " + k + ", so multiply both parts by " + k + ".",
+          r[1] + " × " + k + " = <b>" + c(r[1] * k) + "</b>, so " + ratio(r) + " = " + A + ":" + r[1] * k
+        ]
+      };
+    }
+    // divided by one part instead of the number of shares
+    var a = R.pick([1, 2, 3]), b = R.pick([3, 4, 5, 7]), k2 = R.int(3, 8), total = (a + b) * k2;
+    var wrong2 = F.roundTo(total / b, 2);
+    return {
+      text: says(who, "Zuri's lemonade is lemon juice to water " + a + ":" + b + ". For " + total + " scoops in all, I need " + c(wrong2) +
+        " scoops of lemon juice, because " + total + " ÷ " + b + " = " + c(wrong2) + ".") + FIX + " (How many scoops of lemon juice?)",
+      answer: a * k2, type: "number", unit: "scoops",
+      mistakes: [{ answer: wrong2, message: "That's " + who + "'s answer. Divide the total by the number of SHARES (" + a + " + " + b + "), not by one part." }],
+      steps: [
+        "<b>The mistake:</b> " + who + " divided by " + b + ", the water part. Add the parts first to find the shares.",
+        a + " + " + b + " = " + (a + b) + " shares; " + total + " ÷ " + (a + b) + " = " + k2,
+        "Lemon juice: " + a + " × " + k2 + " = <b>" + c(a * k2) + "</b> scoops (water " + b * k2 + "; check " + a * k2 + " + " + b * k2 + " = " + total + " ✓)"
+      ]
+    };
+  });
+
+  add("L2-med-mistake", "L2", "medium", function () {
+    var who = R.pick(CRITICS);
+    if (R.int(0, 1) === 0) {
+      // compared totals instead of unit prices
+      var v = until(function () {
+        var a = R.pick([2, 3, 4]), b = a + R.pick([1, 2, 3]), uB = R.step(1.8, 3.2, 0.1), uA = F.roundTo(uB + R.step(0.1, 0.4, 0.1), 2);
+        return { a: a, b: b, uA: uA, uB: uB };
+      }, function (v) { return v.a * v.uA < v.b * v.uB; });
+      return {
+        text: says(who, "Juice A is " + v.a + " L for " + m(v.a * v.uA) + ". Juice B is " + v.b + " L for " + m(v.b * v.uB) +
+          ". A is the better buy because " + m(v.a * v.uA) + " is less than " + m(v.b * v.uB) + ".") +
+          "<b>Find the mistake.</b> What is the price per litre of the real better buy?",
+        answer: v.uB, type: "money",
+        mistakes: [{ answer: v.uA, message: "That's Juice A's price per litre. Compare: which is cheaper per litre?" }],
+        steps: [
+          "<b>The mistake:</b> " + who + " compared totals, but the amounts are different. Compare unit prices.",
+          "A: " + m(v.a * v.uA) + " ÷ " + v.a + " = " + m(v.uA) + " per L.  B: " + m(v.b * v.uB) + " ÷ " + v.b + " = " + m(v.uB) + " per L",
+          "Juice B is the better buy: <b>" + m(v.uB) + "</b> per litre"
+        ]
+      };
+    }
+    // added to both numbers in a rate
+    var per = R.pick([2.5, 3, 3.5, 4, 4.5, 6]), t1 = R.pick([2, 4, 6]), t2 = R.pick([8, 10, 12]);
+    var s1 = per * t1, add2 = t2 - t1;
+    return {
+      text: says(who, "The blender makes " + c(s1) + " smoothies in " + t1 + " minutes. In " + t2 + " minutes it makes " + c(s1 + add2) +
+        ", because I added " + add2 + " to both numbers.") + FIX,
+      answer: per * t2, type: "number", unit: "smoothies",
+      mistakes: [{ answer: s1 + add2, message: "That's " + who + "'s answer. Adding to both numbers doesn't keep the rate the same." }],
+      steps: [
+        "<b>The mistake:</b> " + who + " added " + add2 + " to both numbers instead of using the rate.",
+        "Unit rate: " + c(s1) + " ÷ " + t1 + " = " + c(per) + " smoothies per minute",
+        c(per) + " × " + t2 + " = <b>" + c(per * t2) + "</b> smoothies"
+      ]
+    };
+  });
+
+  add("L3-med-mistake", "L3", "medium", function () {
+    var who = R.pick(CRITICS);
+    var v = until(function () {
+      var cm = R.pick([2, 4, 5]), km = R.pick([15, 25, 30, 35, 45]), t = R.int(6, 12);
+      return { cm: cm, km: km, t: t };
+    }, function (v) { return exact2(v.km / v.cm * v.t) && v.t !== v.cm && v.km / v.cm !== 1; });
+    var wrong = v.km + (v.t - v.cm), right = v.km / v.cm * v.t;
+    return {
+      text: "On Zuri's route map, <b>" + v.cm + " cm stands for " + v.km + " km</b>. " +
+        says(who, "A farm " + v.t + " cm away on the map is " + wrong + " km away, because " + v.cm + " + " + (v.t - v.cm) + " = " + v.t +
+          ", so " + v.km + " + " + (v.t - v.cm) + " = " + wrong + ".") + FIX + " (in km)",
+      answer: right, type: "number", unit: "km",
+      mistakes: [{ answer: wrong, message: "That's " + who + "'s answer. Scale, don't add." }],
+      steps: [
+        "<b>The mistake:</b> " + who + " added instead of scaling.",
+        "Value for 1 cm: " + v.km + " ÷ " + v.cm + " = " + c(v.km / v.cm) + " km",
+        v.t + " × " + c(v.km / v.cm) + " = <b>" + c(right) + "</b> km",
+        "Check: " + v.cm + "/" + v.km + " and " + v.t + "/" + c(right) + " are the same fraction ✓"
+      ]
+    };
+  });
+
+  add("L4-med-mistake", "L4", "medium", function () {
+    var who = R.pick(CRITICS), whole = R.int(6, 30) * 20;
+    if (R.int(0, 1) === 0) {
+      var p = R.pick([15, 20, 25, 30]);
+      var wrong = F.roundTo(whole / p, 2);
+      return {
+        text: says(who, p + "% of " + whole + " is " + c(wrong) + ", because " + whole + " ÷ " + p + " = " + c(wrong) + ".") + FIX,
+        answer: whole * p / 100, type: "number",
+        mistakes: [{ answer: wrong, message: "That's " + who + "'s answer. Dividing by " + p + " doesn't find " + p + "%." }],
+        steps: [
+          "<b>The mistake:</b> " + whole + " ÷ " + p + " finds 1/" + p + " of " + whole + ", not " + p + "%.",
+          "10% of " + whole + " = " + c(whole / 10),
+          build(p, whole) + ", so " + p + "% of " + whole + " = <b>" + c(whole * p / 100) + "</b>"
+        ]
+      };
+    }
+    return {
+      text: says(who, "5% of " + whole + " = 0.5 × " + whole + " = " + c(whole / 2) + ".") + FIX,
+      answer: whole / 20, type: "number",
+      mistakes: [{ answer: whole / 2, message: "That's " + who + "'s answer. 0.5 is 50%, not 5%." }],
+      steps: [
+        "<b>The mistake:</b> 5% = 0.05, not 0.5 (0.5 is 50%).",
+        "10% of " + whole + " = " + c(whole / 10) + ", and 5% is half of that: <b>" + c(whole / 20) + "</b>",
+        "Or: 0.05 × " + whole + " = " + c(whole / 20)
+      ]
+    };
+  });
+
+  add("L5-med-mistake", "L5", "medium", function () {
+    var who = R.pick(CRITICS);
+    var v = until(function () { var O = R.pick([4, 5, 8, 10, 12, 16, 20]), p = R.pick([10, 20, 25, 50]); return { O: O, p: p }; },
+      function (v) { return exact2(v.O * v.p / 100); });
+    var N = v.O * (100 + v.p) / 100, ch = N - v.O, wrong = F.roundTo(ch / N * 100, 1);
+    return {
+      text: says(who, "The price went from " + m(v.O) + " to " + m(N) + ". That's a " + F.pct(wrong) + " increase, because " + m(ch) + " ÷ " + m(N) + " = " +
+        F.num(ch / N, 3) + ".") + FIX + " (percent increase)",
+      answer: v.p, type: "percent",
+      mistakes: [{ answer: wrong, message: "That's " + who + "'s answer. Divide by the ORIGINAL price." }],
+      steps: [
+        "<b>The mistake:</b> " + who + " divided by the NEW price. Percent change compares the change to the ORIGINAL.",
+        "Change: " + m(N) + " − " + m(v.O) + " = " + m(ch),
+        m(ch) + " ÷ " + m(v.O) + " = " + F.num(ch / v.O, 4) + " → <b>" + v.p + "%</b> increase"
+      ]
+    };
+  });
+
+  add("L6-med-mistake", "L6", "medium", function () {
+    var who = R.pick(CRITICS);
+    if (R.int(0, 1) === 0) {
+      var P = R.pick([20, 30, 40, 50, 60, 80]), item = R.pick(["pot", "cutting board", "cooler", "sign"]);
+      return {
+        text: says(who, "With 13% HST, the $" + P + " " + item + " costs $" + P + ".13.") + FIX + " (the total with tax)",
+        answer: P * 1.13, type: "money",
+        mistakes: [{ answer: P + 0.13, message: "That's " + who + "'s answer. 13% is not 13 cents." }],
+        steps: [
+          "<b>The mistake:</b> 13% is not 13 cents. 13% of $" + P + " is " + m(P * 0.13) + ".",
+          "Total: " + m(P) + " + " + m(P * 0.13) + " = <b>" + m(P * 1.13) + "</b> (or " + P + " × 1.13)"
+        ]
+      };
+    }
+    var P2 = R.pick([40, 60, 90, 120]), d = R.pick([20, 25, 30, 40]);
+    return {
+      text: says(who, "The $" + P2 + " mixer is " + d + "% off: " + P2 + " × " + F.dec(d) + " = " + m(P2 * d / 100) + ", so the mixer costs " + m(P2 * d / 100) + ".") +
+        FIX + " (the sale price, before tax)",
+      answer: P2 * (100 - d) / 100, type: "money",
+      mistakes: [{ answer: P2 * d / 100, message: "That's " + who + "'s answer — it's the discount, not the price." }],
+      steps: [
+        "<b>The mistake:</b> " + m(P2 * d / 100) + " is the discount (the amount off), not the price.",
+        d + "% off means you pay the " + (100 - d) + "% that's left: " + P2 + " × " + F.dec(100 - d) + " = <b>" + m(P2 * (100 - d) / 100) + "</b>"
+      ]
+    };
+  });
+
+  add("L7-med-mistake", "L7", "medium", function () {
+    var who = R.pick(CRITICS), P = R.int(4, 16) * 500, r = R.pick([3, 4, 5, 6]);
+    if (R.int(0, 1) === 0) {
+      var mo = R.pick([6, 18, 30]);
+      return {
+        text: says(who, "At " + r + "% for " + mo + " months, the interest is " + c(P) + " × " + F.dec(r) + " × " + mo + " = " + m(P * r / 100 * mo) + ".") + FIX,
+        answer: P * r / 100 * mo / 12, type: "money",
+        mistakes: [{ answer: P * r / 100 * mo, message: "That's " + who + "'s answer. Time must be in years." }],
+        steps: [
+          "<b>The mistake:</b> " + who + " used " + mo + " as the time. Time must be in YEARS.",
+          mo + " months ÷ 12 = " + c(mo / 12) + " years",
+          c(P) + " × " + F.dec(r) + " × " + c(mo / 12) + " = <b>" + m(P * r / 100 * mo / 12) + "</b>"
+        ]
+      };
+    }
+    var t = R.int(2, 4);
+    return {
+      text: says(who, "At " + r + "% for " + t + " years: " + c(P) + " × " + (r / 10) + " × " + t + " = " + m(P * r / 10 * t) + " of interest.") + FIX,
+      answer: P * r / 100 * t, type: "money",
+      mistakes: [{ answer: P * r / 10 * t, message: "That's " + who + "'s answer. Check the rate as a decimal." }],
+      steps: [
+        "<b>The mistake:</b> " + r + "% = " + F.dec(r) + ", not " + (r / 10) + ".",
+        c(P) + " × " + F.dec(r) + " × " + t + " = <b>" + m(P * r / 100 * t) + "</b>"
+      ]
+    };
+  });
+
+  add("L8-med-mistake", "L8", "medium", function () {
+    var who = R.pick(CRITICS);
+    var v = until(function () { return { r: R.pick([6, 8, 9, 10, 12]), D: R.step(150, 480, 30) }; },
+      function (v) { return exact2(v.D / 100 * v.r) && Math.abs(v.D / 100 * v.r - v.D / v.r) > 0.01; });
+    var right = v.D / 100 * v.r, wrong = F.roundTo(v.D / v.r, 2);
+    return {
+      text: "Zuri's truck uses <b>" + v.r + " L of gas per 100 km</b>. " +
+        says(who, "So a " + v.D + " km trip uses " + v.D + " ÷ " + v.r + " = " + c(wrong) + " L.") + FIX + " (in litres)",
+      answer: right, type: "number", unit: "L",
+      mistakes: [{ answer: wrong, message: "That's " + who + "'s answer. How many hundreds of km is the trip?" }],
+      steps: [
+        "<b>The mistake:</b> " + who + " divided by " + v.r + ". The rate is " + v.r + " L for every 100 km.",
+        v.D + " km is " + c(v.D / 100) + " × 100 km",
+        c(v.D / 100) + " × " + v.r + " = <b>" + c(right) + "</b> L"
+      ]
+    };
+  });
+
+  // =====================================================================
+  // More Spicy (BOSS-style) questions, modelled on the handouts and test
+  // =====================================================================
+
+  add("L4-spicy-jug", "L4", "spicy", function () {
+    var v = until(function () {
+      var a = R.pick([20, 25, 30, 40, 50]), b = a + R.pick([10, 20, 25, 30, 40]), C = R.pick([4, 5, 6, 8, 10, 12, 20]);
+      return { a: a, b: b, C: C, V: C * (b - a) / 100 };
+    }, function (v) { return v.b < 100 && exact2(v.V) && v.V >= 0.5; });
+    var gap = v.b - v.a;
+    return {
+      text: "Zuri's juice jug is <b>" + v.a + "% full</b>. She adds <b>" + c(v.V) + " L</b>, and now it is <b>" + v.b + "% full</b>. How many litres does the full jug hold?",
+      answer: v.C, type: "number", unit: "L",
+      steps: [
+        "The " + c(v.V) + " L filled " + v.b + "% − " + v.a + "% = " + gap + "% of the jug.",
+        chain(gap, v.V) ? chain(gap, v.V) + " L" : gap + "% = " + c(v.V) + " L, so 1% = " + F.num(v.V / gap, 4) + " L, so 100% = " + c(v.C) + " L",
+        "The full jug holds <b>" + c(v.C) + "</b> L"
+      ],
+      mistakes: [{ answer: v.V / v.b * 100, message: "The " + c(v.V) + " L didn't fill " + v.b + "% — it filled the GAP between " + v.a + "% and " + v.b + "%." }]
+    };
+  });
+
+  add("L6-spicy-boss-back", "L6", "spicy", function () {
+    var v = until(function () {
+      var d = R.pick([10, 20, 25, 40]), O = R.int(4, 30) * 5;
+      return { d: d, O: O, sale: O * (100 - d) / 100 };
+    }, function (v) { return Number.isInteger(v.sale); });
+    var paid = F.roundTo(v.sale * 1.13, 2);
+    var item = R.pick(["mixer", "blender", "cooler", "juicer"]);
+    return {
+      text: "A " + item + " is <b>" + v.d + "% off</b>. Then 13% HST is added, and Zuri pays <b>" + m(paid) + "</b>. What was the original price?",
+      answer: v.O, type: "money",
+      steps: [
+        "Work backwards, undoing the LAST step first.",
+        "Undo the tax: " + m(paid) + " ÷ 1.13 = " + m(v.sale) + " (the sale price)",
+        "Undo the discount: the sale price is " + (100 - v.d) + "% of the original, so " + m(v.sale) + " ÷ " + F.dec(100 - v.d) + " = <b>" + m(v.O) + "</b>",
+        "Check: " + m(v.O) + " × " + F.dec(100 - v.d) + " × 1.13 = " + m(paid) + " ✓"
+      ],
+      mistakes: [{ answer: v.sale, message: "That's the sale price. Now undo the " + v.d + "% discount too." }]
+    };
+  });
+
+  add("L6-spicy-crew", "L6", "spicy", function () {
+    var v = until(function () {
+      return { n: R.pick([4, 5, 6, 8]), food: R.int(16, 40) * 5, t: R.pick([15, 18, 20]) };
+    }, function (v) { return true; });
+    var tax = v.food * 0.13, tip = v.food * v.t / 100, total = v.food + tax + tip, each = total / v.n;
+    return {
+      text: "Zuri takes her crew of <b>" + v.n + "</b> to a restaurant. The food costs <b>" + m(v.food) + "</b> before tax. They add 13% HST and tip <b>" + v.t +
+        "% on the food</b>. They split the total equally. How much does each person pay?",
+      answer: each, type: "money",
+      steps: [
+        "HST: " + m(v.food) + " × 0.13 = " + m(tax),
+        "Tip on the food: " + m(v.food) + " × " + F.dec(v.t) + " = " + m(tip),
+        "Total: " + m(v.food) + " + " + m(tax) + " + " + m(tip) + " = " + m(total),
+        "Split " + v.n + " ways: " + m(total) + " ÷ " + v.n + " = " + fin(each)
+      ],
+      mistakes: [{ answer: (v.food * 1.13 * (1 + v.t / 100)) / v.n, message: "The tip is on the FOOD, not on the bill with tax." },
+                 { answer: total, message: "That's the whole bill. Split it between the " + v.n + " of them." }]
+    };
+  });
+
+  add("L7-spicy-boss-back", "L7", "spicy", function () {
+    var v = until(function () {
+      var r = R.pick([2, 4, 5]), t = R.pick([2, 3, 4, 5]), P = R.int(4, 40) * 100;
+      return { r: r, t: t, P: P, A: P * (1 + r * t / 100) };
+    }, function (v) { return exact2(v.A) && (v.r * v.t) % 5 === 0; });
+    var up = v.r * v.t;
+    return {
+      text: "Zuri saves some money at <b>" + v.r + "% simple interest</b> per year. After <b>" + v.t + " years</b> she has <b>" + m(v.A) + "</b> in all. How much did she put in?",
+      answer: v.P, type: "money",
+      steps: [
+        v.t + " years at " + v.r + "% adds " + v.t + " × " + v.r + "% = " + up + "% of what she put in.",
+        "So " + (100 + up) + "% of her savings = " + m(v.A) + ".",
+        (chain(100 + up, v.A, F.moneyRaw) || ("100% = " + m(v.A) + " ÷ " + F.dec(100 + up) + " = " + m(v.P))).replace(/= ([^=]+)$/, "= <b>$1</b>"),
+        "Check: " + m(v.P) + " × " + F.dec(v.r) + " × " + v.t + " = " + m(v.A - v.P) + " interest; " + m(v.P) + " + " + m(v.A - v.P) + " = " + m(v.A) + " ✓"
+      ],
+      mistakes: [{ answer: v.A * (100 - up) / 100, message: "Taking " + up + "% off doesn't undo it — the interest was " + up + "% of the smaller amount she put in." }]
+    };
+  });
+
+  add("L8-spicy-festival", "L8", "spicy", function () {
+    var v = until(function () {
+      return { n: R.int(10, 50) * 10, p: R.pick([5, 5.5, 6, 6.5]), f: R.pick([10, 15, 20]), cst: R.pick([1.5, 1.75, 1.8, 2, 2.25]) };
+    }, function (v) { return true; });
+    var sales = v.n * v.p, keep = sales * (100 - v.f) / 100, costs = v.n * v.cst, profit = keep - costs;
+    return {
+      text: "Zuri sells <b>" + v.n + " smoothies</b> at a festival for <b>" + m(v.p) + "</b> each. The festival takes <b>" + v.f + "%</b> of her sales. " +
+        "Her costs are <b>" + m(v.cst) + " per smoothie</b>. What is her profit?",
+      answer: profit, type: "money",
+      steps: [
+        "<b>Step 1 — sales:</b> " + v.n + " × " + m(v.p) + " = " + m(sales),
+        "<b>Step 2 — after the festival's " + v.f + "%:</b> she keeps " + (100 - v.f) + "%: " + m(sales) + " × " + F.dec(100 - v.f) + " = " + m(keep),
+        "<b>Step 3 — costs:</b> " + v.n + " × " + m(v.cst) + " = " + m(costs),
+        "<b>Step 4 — profit:</b> " + m(keep) + " − " + m(costs) + " = <b>" + m(profit) + "</b>"
+      ],
+      mistakes: [{ answer: sales - costs, message: "Don't forget the festival takes " + v.f + "% of her sales first." },
+                 { answer: sales * v.f / 100 - costs, message: "The " + v.f + "% is what the festival TAKES. She keeps " + (100 - v.f) + "%." }]
     };
   });
 

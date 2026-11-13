@@ -104,7 +104,24 @@ window.MP = window.MP || {};
   // Returns { status: "correct" | "wrong" | "unreadable", message }
   // q.type: "money" | "percent" | "number" | "ratio"
   // "unreadable" never uses up a try.
+  // q.mistakes: [{ answer, message }] — common wrong answers (from the marking guide)
+  // get a message that names the mistake instead of a plain "not quite".
   function check(raw, q) {
+    var res = baseCheck(raw, q);
+    if (res.status === "wrong" && q.mistakes) {
+      for (var i = 0; i < q.mistakes.length; i++) {
+        var m = q.mistakes[i];
+        if (baseCheck(raw, { type: q.type, answer: m.answer, dp: q.dp }).status === "correct") {
+          res.message = m.message;
+          res.mistake = true;
+          break;
+        }
+      }
+    }
+    return res;
+  }
+
+  function baseCheck(raw, q) {
     if (q.type === "ratio") {
       var got = parseRatio(raw), want = q.answer;
       if (!got || got.length !== want.length) {
@@ -123,7 +140,13 @@ window.MP = window.MP || {};
     var v = p.value, ans = q.answer;
 
     if (q.type === "money") {
-      if (Math.abs(roundTo(v, 2) - roundTo(ans, 2)) < 1e-9) return { status: "correct" };
+      if (Math.abs(roundTo(v, 2) - roundTo(ans, 2)) < 1e-9) {
+        // the test wants money to the cent: $50.80, not $50.8
+        if (/\.\d(?!\d)/.test(String(raw))) {
+          return { status: "correct", note: "On a test, write money to the cent: " + F.money(ans) + ", not " + String(raw).trim() + "." };
+        }
+        return { status: "correct" };
+      }
       if (Math.abs(v - ans) <= 0.021) {
         return { status: "wrong", message: "So close! Check your rounding — keep all the digits and round to the nearest cent at the very end." };
       }
