@@ -95,7 +95,7 @@
       FIRSTTRY: state.stats.firstTry,
       MINUTES: minutesActive(),
       MISSION: mission ? (mission.title || "Mission") + " — " + missionDone() + "/" + MP.mission.total(mission) +
-        (missionDone() >= MP.mission.total(mission) ? " complete" : "") : "Free practice"
+        (missionComplete() ? " complete" + (missionBonus() ? " +" + missionBonus() + " bonus" : "") : "") : "Free practice"
     };
   }
 
@@ -133,6 +133,13 @@
     return MP.LEVELS.reduce(function (sum, lv) { return sum + Math.min(state.levelCorrect[lv.id], mission.t[lv.id]); }, 0);
   }
 
+  function missionComplete() { return missionDone() >= MP.mission.total(mission); }
+
+  // correct answers beyond the targets (students can keep going after they finish)
+  function missionBonus() {
+    return MP.LEVELS.reduce(function (sum, lv) { return sum + Math.max(0, state.levelCorrect[lv.id] - mission.t[lv.id]); }, 0);
+  }
+
   // first level (mild → medium → spicy) that still needs correct answers
   function nextLevel() {
     var lv = MP.LEVELS.filter(function (x) { return mission.t[x.id] > 0 && state.levelCorrect[x.id] < mission.t[x.id]; })[0];
@@ -141,7 +148,9 @@
 
   function renderMissionBar() {
     var done = missionDone(), total = MP.mission.total(mission);
-    $("mbCount").textContent = done + " / " + total + " correct";
+    var bonus = missionBonus();
+    $("mbCount").textContent = done >= total ? "✓ Mission complete" + (bonus ? " · +" + bonus + " bonus" : " · keep going for bonus!") :
+      done + " / " + total + " correct";
     $("mbFill").style.width = Math.round(done / total * 100) + "%";
     $("mbBar").setAttribute("aria-valuemax", total);
     $("mbBar").setAttribute("aria-valuenow", done);
@@ -163,7 +172,9 @@
     renderMissionBar();
     renderLevelSwitch();
     var total = MP.mission.total(mission);
-    if (correct && missionDone() >= total && !state.completedShown) {
+    if (correct && state.completedShown) {
+      fb.insertAdjacentHTML("beforeend", "<div class='level-done'>⭐ Bonus! That's " + missionBonus() + " extra.</div>");
+    } else if (correct && missionDone() >= total && !state.completedShown) {
       state.showEndOnNext = true;
       $("nextBtn").textContent = "See your mission result 🎉";
       fb.insertAdjacentHTML("beforeend", "<div class='level-done'>🎉 That's the whole mission!</div>");
@@ -183,7 +194,10 @@
     end.className = "end " + cls;
     $("endNames").textContent = state.names.join(" & ");
     $("endTitle").textContent = done >= total ? "Mission complete!" : (cls === "yellow" ? "Mission: halfway there" : "Mission: keep going");
+    var bonus = missionBonus();
     $("endScore").textContent = done + " / " + total;
+    $("endBonus").textContent = bonus ? "+ " + bonus + " bonus question" + (bonus > 1 ? "s" : "") + " ⭐" : "";
+    $("keepGoing").textContent = done >= total ? "Keep going — bonus questions ⭐" : "Keep practising";
     $("endLevels").innerHTML = MP.LEVELS.filter(function (lv) { return mission.t[lv.id] > 0; }).map(function (lv) {
       var got = Math.min(state.levelCorrect[lv.id], mission.t[lv.id]);
       return "<span>" + lv.icon + " " + lv.label + " " + got + "/" + mission.t[lv.id] + (got >= mission.t[lv.id] ? " ✓" : "") + "</span>";
@@ -227,9 +241,10 @@
       b.setAttribute("aria-pressed", lv.id === state.level ? "true" : "false");
       b.innerHTML = lv.icon + " " + lv.label;
       if (mission) {
-        var t = mission.t[lv.id], got = Math.min(state.levelCorrect[lv.id], t);
-        if (!t) { b.disabled = true; b.title = "Not part of this mission"; }
-        else b.innerHTML += " <small class='lvcount'>" + (got >= t ? "✓" : got + "/" + t) + "</small>";
+        var t = mission.t[lv.id], got = Math.min(state.levelCorrect[lv.id], t), extra = Math.max(0, state.levelCorrect[lv.id] - t);
+        if (!t && !missionComplete()) { b.disabled = true; b.title = "Not part of this mission (opens for bonus questions when you finish)"; }
+        else if (t) b.innerHTML += " <small class='lvcount'>" + (got >= t ? "✓" + (extra ? " +" + extra : "") : got + "/" + t) + "</small>";
+        else if (extra) b.innerHTML += " <small class='lvcount'>+" + extra + "</small>";
       }
       b.onclick = function () {
         if (lv.id === state.level) return;

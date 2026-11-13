@@ -91,6 +91,7 @@
       "3. Mission: get " + MP.mission.targetsText(m) + " questions CORRECT. Lessons: " + lessonsTxt + ".",
       "4. Calculator: " + (m.calc ? "allowed (built into the page)." : "NOT allowed for this mission (it's hidden)."),
       "5. Stuck? Press \"Show me the steps\" for a worked solution.",
+      "   Finished early? Students keep going: extra correct answers count as bonus questions (⭐).",
       "6. Near the end of class, students press \"Finish\" and hold up their screen:",
       "   GREEN = mission complete   YELLOW = at least half done   RED = less than half",
       "   Please note anyone who is red or who didn't finish."

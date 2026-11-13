@@ -304,3 +304,5 @@ body.end-open { overflow: hidden; }
 .print-row a.btn { text-decoration: none; display: inline-flex; align-items: center; white-space: nowrap; }
 .print-row a[aria-disabled="true"] { opacity: .4; pointer-events: none; }
 .print-row .hint { margin: 0; flex: 1; min-width: 220px; }
+.end-bonus { font-size: clamp(1.4rem, 4vw, 2.2rem); font-weight: 800; margin: 4px 0 0; }
+.end-bonus:empty { display: none; }
