@@ -23,8 +23,44 @@ var N = Number(process.argv[2]) || 3000;
 var failures = 0, total = 0, mistakeClash = 0;
 
 function checkOne(t, q, p, stepsText) {
-  var types = ["money", "percent", "number", "ratio"];
+  var types = ["money", "percent", "number", "ratio", "fraction", "sci", "choice", "order"];
   if (types.indexOf(p.type) < 0) { fail(t, q, "bad type " + p.type); return; }
+  var strip = stepsText.replace(/<[^>]+>/g, "");
+  if (p.type === "fraction") {
+    var a = p.answer, Fr = MP.Fr;
+    if (!a || !Number.isInteger(a.n) || !Number.isInteger(a.d) || a.d <= 0 || MP.gcd(a.n, a.d) !== 1) { fail(t, q, "bad fraction " + JSON.stringify(a)); return; }
+    [Fr.imp(a), Fr.text(a)].forEach(function (s) { if (MP.check(s, p).status !== "correct") fail(t, q, "fraction '" + s + "' not accepted"); });
+    if (a.d > 1 && MP.check((a.n * 2) + "/" + (a.d * 2), p).status !== "unreadable") fail(t, q, "unsimplified fraction not flagged");
+    if (MP.check(Fr.imp(Fr.add(a, Fr.make(1, 7))), p).status === "correct") fail(t, q, "wrong fraction accepted");
+    if (strip.indexOf(Fr.text(a)) < 0 && strip.indexOf(Fr.imp(a)) < 0) fail(t, q, "fraction answer " + Fr.text(a) + " not in steps");
+    (p.mistakes || []).forEach(function (mk) { if (Fr.eq(mk.answer, a)) mistakeClash++; });
+    return;
+  }
+  if (p.type === "sci") {
+    var sa = p.answer;
+    if (!(Math.abs(sa.a) >= 1 && Math.abs(sa.a) < 10) || !Number.isInteger(sa.e)) { fail(t, q, "sci answer not proper " + JSON.stringify(sa)); return; }
+    [F.sci(sa.a, sa.e), F.num(sa.a, 6) + " x 10^" + sa.e, F.num(sa.a, 6) + "e" + sa.e].forEach(function (s) {
+      if (MP.check(s, p).status !== "correct") fail(t, q, "sci '" + s + "' not accepted");
+    });
+    if (MP.check(F.num(sa.a * 10, 6) + " x 10^" + (sa.e - 1), p).status !== "unreadable") fail(t, q, "improper sci not flagged");
+    if (strip.indexOf(F.sci(sa.a, sa.e)) < 0) fail(t, q, "sci answer not in steps");
+    return;
+  }
+  if (p.type === "choice") {
+    if (!p.options || p.options.indexOf(p.answer) < 0) { fail(t, q, "choice answer not an option: " + p.answer); return; }
+    if (new Set(p.options).size !== p.options.length) fail(t, q, "duplicate options " + p.options);
+    if (MP.check(p.answer, p).status !== "correct") fail(t, q, "choice answer not accepted");
+    p.options.forEach(function (o) { if (o !== p.answer && MP.check(o, p).status === "correct") fail(t, q, "wrong option accepted: " + o); });
+    var ansTxt = p.answer.replace(/</g, "&lt;");
+    if (stepsText.indexOf(p.answer) < 0 && stepsText.indexOf(ansTxt) < 0) fail(t, q, "choice answer not in steps");
+    return;
+  }
+  if (p.type === "order") {
+    if (MP.check(p.answer.join(", "), p).status !== "correct") fail(t, q, "order answer not accepted");
+    if (new Set(p.answer).size !== p.answer.length) fail(t, q, "order has duplicates");
+    if (strip.indexOf(p.answer.join(", ")) < 0) fail(t, q, "order answer not in steps");
+    return;
+  }
   if (p.type === "ratio") {
     if (!Array.isArray(p.answer) || p.answer.some(function (x) { return !Number.isInteger(x) || x <= 0; })) fail(t, q, "bad ratio " + p.answer);
     var g = p.answer.reduce(function (a, b) { return MP.gcd(a, b); });
@@ -46,7 +82,8 @@ function checkOne(t, q, p, stepsText) {
     if (r.status === "correct") { if (!p.mistakeMayEqual) mistakeClash++; return; }
     if (r.message !== mk.message && r.status === "wrong" && !r.mistake) fail(t, q, "mistake " + typed + " did not give its message");
   });
-  if (p.answer <= 0) fail(t, q, "answer not positive: " + p.answer);
+  if (p.answer <= 0 && p.type !== "number") fail(t, q, "answer not positive: " + p.answer);
+  if (p.answer === 0 && !p.zeroOk) fail(t, q, "answer is zero");
   var shown = MP.answerText(p);
   if (MP.check(shown, p).status !== "correct") fail(t, q, "formatted answer '" + shown + "' not accepted");
   if (p.type === "money") {
@@ -84,7 +121,7 @@ Object.keys(MP.units).forEach(function (uid) {
       total++;
       var q;
       try { q = t.generate(); } catch (e) { fail(t, null, "threw " + e.message); continue; }
-      seen[q.text] = 1;
+      seen[q.text + JSON.stringify(q.options || "")] = 1;
       if (/NaN|undefined|Infinity/.test(q.text + (q.steps || []).join(""))) fail(t, q, "NaN/undefined in text or steps");
       if (!q.steps || q.steps.length < 2) { fail(t, q, "too few steps"); continue; }
       var stepsText = q.steps.join(" ");

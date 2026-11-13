@@ -1,4 +1,4 @@
-/* Zuri's Smoothie Truck Math — one stylesheet for every page */
+/* Grade 8 Math Practice — one stylesheet for every page */
 :root {
   --bg: #fff8f0;
   --card: #ffffff;
@@ -306,3 +306,13 @@ body.end-open { overflow: hidden; }
 .print-row .hint { margin: 0; flex: 1; min-width: 220px; }
 .end-bonus { font-size: clamp(1.4rem, 4vw, 2.2rem); font-weight: 800; margin: 4px 0 0; }
 .end-bonus:empty { display: none; }
+
+/* Choice answers (Rational / Irrational, <  >  =) */
+.choices { display: flex; flex-wrap: wrap; gap: 10px; }
+.choice-btn { min-width: 110px; font-size: 1.15rem; }
+.choice-btn.picked { background: var(--brand); color: #fff; }
+.inputs .ans-wrap:has(.choices) { flex-direction: column; align-items: flex-start; }
+/* keep fractions like 2 1/3 on one line */
+.fr { white-space: nowrap; }
+.choice .story { color: var(--brand); font-size: .85rem; font-weight: 600; }
+.lesson-label .story { color: var(--muted); }

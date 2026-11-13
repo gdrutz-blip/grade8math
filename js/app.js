@@ -282,7 +282,8 @@
     state.tries = 0; state.stepsSeen = false; state.done = false;
 
     var L = lessonById(t.lesson);
-    $("lessonLabel").innerHTML = "Unit " + state.unit.number + " · <b>L" + L.n + "</b> " + L.title;
+    $("lessonLabel").innerHTML = "Unit " + state.unit.number + " · <b>L" + L.n + "</b> " + L.title +
+      (state.unit.story ? "<span class='story'> · " + state.unit.story + "</span>" : "");
     var lv = MP.LEVELS.filter(function (x) { return x.id === q.level; })[0];
     $("qmeta").innerHTML = "<span class='tag level-" + lv.id + "'>" + lv.icon + " " + lv.label + "</span>";
     $("qtext").innerHTML = q.text;
@@ -294,6 +295,7 @@
     $("stepsBtn").textContent = "Show me the steps";
     renderInputs(q);
     $("checkBtn").disabled = false;
+    $("checkBtn").hidden = q.type === "choice";
     $("skipBtn").hidden = false;
     $("nextBtn").hidden = true;
     $("nextBtn").textContent = "Next question →";
@@ -303,6 +305,7 @@
 
   // ---------- Answer boxes: one, or one per part (e.g. "Mango" and "Berry") ----------
   var lastFocused = null;
+  var PLACEHOLDER = { ratio: "e.g. 2:3", fraction: "e.g. 1 3/4 or 7/4", sci: "e.g. 3.2 x 10^5", order: "e.g. C, A, B" };
   function inputs() { return Array.prototype.slice.call(document.querySelectorAll("#inputs input")); }
 
   function renderInputs(q) {
@@ -323,12 +326,33 @@
       inp.className = "ans-input";
       inp.autocomplete = "off";
       inp.spellcheck = false;
-      inp.placeholder = p.type === "ratio" ? "e.g. 2:3" : (q.parts ? "Answer" : "Your answer");
+      inp.placeholder = PLACEHOLDER[p.type] || (q.parts ? "Answer" : "Your answer");
+      if (p.type === "choice") {
+        // one click answers: the buttons fill a hidden box and check it
+        inp.className = "ans-input sr-only";
+        inp.tabIndex = -1;
+        var row = document.createElement("div");
+        row.className = "choices";
+        p.options.forEach(function (opt) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "btn choice-btn";
+          b.textContent = opt;
+          b.onclick = function () {
+            if (state.done) return;
+            inp.value = opt;
+            row.querySelectorAll("button").forEach(function (x) { x.classList.toggle("picked", x === b); });
+            $("answerForm").requestSubmit ? $("answerForm").requestSubmit() : onCheck(new Event("submit"));
+          };
+          row.appendChild(b);
+        });
+        wrap.appendChild(row);
+      }
       inp.setAttribute("aria-label", q.parts ? p.label : "Your answer");
       inp.addEventListener("focus", function () { lastFocused = inp; });
       if (i === 0) inp.id = "answer";
       wrap.appendChild(inp);
-      if (p.unit && p.type === "number") {
+      if (p.unit && (p.type === "number" || p.type === "fraction")) {
         var u = document.createElement("span");
         u.className = "ans-unit";
         u.textContent = p.unit;
@@ -364,6 +388,7 @@
       if (state.tries === 0 && !state.stepsSeen) state.stats.firstTry++;
     }
     inputs().forEach(function (i) { i.disabled = true; });
+    document.querySelectorAll("#inputs button").forEach(function (b) { b.disabled = true; });
     $("checkBtn").disabled = true;
     $("skipBtn").hidden = true;
     $("nextBtn").hidden = false;
@@ -410,7 +435,7 @@
       return;
     }
     state.tries++;
-    if (state.tries < MAX_TRIES) {
+    if (state.tries < (state.q.maxTries || MAX_TRIES)) {
       fb.className = "feedback warn";
       fb.innerHTML = "❌ <b>Not quite.</b> " + (res.message || (parts.length > 1 ? "Fix the box marked in red." : "Check your work and try once more.")) +
         " <span class='note'>(1 try left)</span>";

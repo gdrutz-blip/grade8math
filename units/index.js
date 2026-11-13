@@ -3,6 +3,8 @@
 window.MP = window.MP || {};
 
 MP.UNIT_FILES = [
+  "units/unit1.js",
+  "units/unit2.js",
   "units/unit3.js"
 ];
 

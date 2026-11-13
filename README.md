@@ -1,4 +1,4 @@
-# Zuri's Smoothie Truck Math — Grade 8 practice generator
+# Grade 8 Math Practice — question generator
 
 Students pick a unit, lessons and a level (Mild / Medium / Spicy) and get
 freshly generated practice questions with instant feedback and worked steps.
@@ -17,7 +17,9 @@ Plain HTML, CSS and JavaScript — no build step.
 | `js/calculator.js` | Built-in calculator (hidden when a mission turns it off) |
 | `js/engine.js` | Random numbers, $ / % formatting, answer checking, common-mistake messages |
 | `units/index.js` | List of unit files (add a line here for a new unit) |
-| `units/unit3.js` | Unit 3 lessons and question templates |
+| `units/unit1.js` | Unit 1 Number Systems (Roz's Moon Base) |
+| `units/unit2.js` | Unit 2 Operations with Rational Numbers (Sana's Movie Night) |
+| `units/unit3.js` | Unit 3 Proportional Relationships, Rates and Percentages (Zuri's Smoothie Truck) |
 | `tests/check-templates.js` | Generates thousands of questions per template and checks the answers |
 
 ## Adding a unit later

@@ -84,7 +84,7 @@
 
     var lessonsTxt = MP.mission.lessonsText(m, unit);
     $("supplyNote").value = [
-      "MATH" + (m.title ? " — " + m.title : "") + " (Zuri's Smoothie Truck practice mission)",
+      "MATH" + (m.title ? " — " + m.title : "") + " (Unit " + unit.number + " practice mission" + (unit.story ? ", " + unit.story : "") + ")",
       "",
       "1. Students open this link on their Chromebooks: " + link,
       "2. They type their first names. Partners share one Chromebook and type both names. Partners swap Solver and Checker every question (the screen shows whose turn it is).",

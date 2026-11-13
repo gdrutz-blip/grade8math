@@ -47,3 +47,5 @@
   .key-sheet { break-before: page; page-break-before: always; }
   .p-level { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+.blank.short { min-width: .4in; }
+.p-level { break-after: avoid; page-break-after: avoid; }
