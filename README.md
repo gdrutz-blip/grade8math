@@ -11,6 +11,8 @@ Plain HTML, CSS and JavaScript — no build step.
 | `index.html` + `js/start.js` | Student start: names → unit → lessons → level |
 | `practice.html` + `js/app.js` | Question screen, tries, steps, level switch, partner roles |
 | `teacher.html` + `js/teacher.js` | Mission builder: lessons, targets, calculator on/off → link + supply note |
+| `print.html` + `js/print.js` + `css/print.css` | Print a set: worksheet + answer key from the teacher page's lessons and targets |
+| `js/config.js` + `js/tracker.js` | Google Form link and results tracking (see `docs/TRACKING.md`) |
 | `js/mission.js` | Packs a mission into the link; saves progress on the device |
 | `js/calculator.js` | Built-in calculator (hidden when a mission turns it off) |
 | `js/engine.js` | Random numbers, $ / % formatting, answer checking, common-mistake messages |

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Print a Set · Smoothie Truck Math</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥤</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/print.css">
+</head>
+<body class="print-page">
+  <div class="print-toolbar no-print">
+    <a class="btn" href="teacher.html">← Teacher page</a>
+    <button id="printBtn" class="btn primary" type="button">🖨️ Print</button>
+    <button id="newBtn" class="btn" type="button">🔄 New questions</button>
+    <label><input type="checkbox" id="showSteps" checked> Worked steps in the answer key</label>
+    <label><input type="checkbox" id="showKey" checked> Include the answer key</label>
+    <span id="printInfo" class="hint"></span>
+  </div>
+
+  <main id="sheet" class="sheet"></main>
+  <section id="key" class="sheet key-sheet"></section>
+
+  <script src="js/engine.js"></script>
+  <script src="units/index.js"></script>
+  <script src="js/mission.js"></script>
+  <script src="js/print.js"></script>
+</body>
+</html>
