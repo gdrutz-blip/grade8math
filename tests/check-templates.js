@@ -22,6 +22,44 @@ var MP = ctx.window.MP, F = MP.F;
 var N = Number(process.argv[2]) || 3000;
 var failures = 0, total = 0;
 
+function checkOne(t, q, p, stepsText) {
+  var types = ["money", "percent", "number", "ratio"];
+  if (types.indexOf(p.type) < 0) { fail(t, q, "bad type " + p.type); return; }
+  if (p.type === "ratio") {
+    if (!Array.isArray(p.answer) || p.answer.some(function (x) { return !Number.isInteger(x) || x <= 0; })) fail(t, q, "bad ratio " + p.answer);
+    var g = p.answer.reduce(function (a, b) { return MP.gcd(a, b); });
+    if (g !== 1) fail(t, q, "ratio answer not simplest: " + p.answer);
+    ["", " to ", " : "].forEach(function (sep, i) {
+      var s = p.answer.join(i === 0 ? ":" : sep);
+      if (MP.check(s, p).status !== "correct") fail(t, q, "ratio '" + s + "' not accepted");
+    });
+    if (MP.check(p.answer.map(function (x) { return x * 2; }).join(":"), p).status !== "unreadable") fail(t, q, "unsimplified ratio not flagged");
+    if (stepsText.indexOf(p.answer.join(":")) < 0) fail(t, q, "ratio answer not in steps");
+    return;
+  }
+  if (typeof p.answer !== "number" || !isFinite(p.answer)) { fail(t, q, "answer not finite: " + p.answer); return; }
+  if (p.answer <= 0) fail(t, q, "answer not positive: " + p.answer);
+  var shown = MP.answerText(p);
+  if (MP.check(shown, p).status !== "correct") fail(t, q, "formatted answer '" + shown + "' not accepted");
+  if (p.type === "money") {
+    var plain = F.roundTo(p.answer, 2).toFixed(2);
+    ["$" + plain, plain, plain + " dollars"].forEach(function (s) {
+      if (MP.check(s, p).status !== "correct") fail(t, q, "money format '" + s + "' not accepted");
+    });
+    if (MP.check((F.roundTo(p.answer, 2) + 0.05).toFixed(2), p).status === "correct") fail(t, q, "wrong answer accepted");
+    if (stepsText.indexOf(shown) < 0) fail(t, q, "answer " + shown + " not shown in steps");
+  } else {
+    var dp = p.dp === undefined ? (p.type === "percent" ? 1 : 2) : p.dp;
+    var v = F.num(p.answer, dp);
+    var forms = p.type === "percent" ? [v, v + "%"] : [v];
+    forms.forEach(function (s) { if (MP.check(s, p).status !== "correct") fail(t, q, "format '" + s + "' not accepted"); });
+    if (MP.check(String(p.answer + 1), p).status === "correct") fail(t, q, "wrong answer accepted");
+    // answers should be tidy: at most 2 decimals unless dp says otherwise
+    if (Math.abs(F.roundTo(p.answer, Math.max(dp, 2)) - p.answer) > 1e-9) fail(t, q, "answer has extra decimals: " + p.answer);
+    if (stepsText.indexOf(F.num(p.answer, dp)) < 0) fail(t, q, "answer " + F.num(p.answer, dp) + " not shown in steps");
+  }
+}
+
 function fail(t, q, msg) {
   failures++;
   if (failures <= 30) console.log("FAIL " + t.id + ": " + msg + "\n   " + String(q && q.text).replace(/<[^>]+>/g, "").slice(0, 200));
@@ -39,30 +77,10 @@ Object.keys(MP.units).forEach(function (uid) {
       var q;
       try { q = t.generate(); } catch (e) { fail(t, null, "threw " + e.message); continue; }
       seen[q.text] = 1;
-      if (typeof q.answer !== "number" || !isFinite(q.answer)) { fail(t, q, "answer not finite: " + q.answer); continue; }
-      if (q.answer <= 0) fail(t, q, "answer not positive: " + q.answer);
-      if (["money", "percent", "number"].indexOf(q.type) < 0) fail(t, q, "bad type " + q.type);
-      if (!q.steps || q.steps.length < 2) fail(t, q, "too few steps");
-      if (/NaN|undefined|Infinity/.test(q.text + q.steps.join(""))) fail(t, q, "NaN/undefined in text or steps");
-
-      var shown = MP.answerText(q);
-      if (MP.check(shown, q).status !== "correct") fail(t, q, "formatted answer '" + shown + "' not accepted");
-      if (q.type === "money") {
-        var plain = F.roundTo(q.answer, 2).toFixed(2);
-        ["$" + plain, plain, plain + " dollars"].forEach(function (s) {
-          if (MP.check(s, q).status !== "correct") fail(t, q, "money format '" + s + "' not accepted");
-        });
-        var wrong = (F.roundTo(q.answer, 2) + 0.05).toFixed(2);
-        if (MP.check(wrong, q).status === "correct") fail(t, q, "wrong answer accepted");
-      }
-      if (q.type === "percent") {
-        var v = F.num(q.answer, 2);
-        [v, v + "%", v + " %"].forEach(function (s) {
-          if (MP.check(s, q).status !== "correct") fail(t, q, "percent format '" + s + "' not accepted");
-        });
-      }
+      if (/NaN|undefined|Infinity/.test(q.text + (q.steps || []).join(""))) fail(t, q, "NaN/undefined in text or steps");
+      if (!q.steps || q.steps.length < 2) { fail(t, q, "too few steps"); continue; }
       var stepsText = q.steps.join(" ");
-      if (stepsText.indexOf(shown) < 0) fail(t, q, "answer " + shown + " not shown in steps");
+      (q.parts || [q]).forEach(function (p) { checkOne(t, q, p, stepsText); });
     }
     var variety = Object.keys(seen).length;
     if (variety < 10) fail(t, null, "only " + variety + " different questions");
@@ -81,6 +99,13 @@ var spot = [
   ["28%", { type: "percent", answer: 28 }, "correct"],
   ["0.28%", { type: "percent", answer: 28 }, "wrong"],
   ["abc", { type: "money", answer: 1 }, "unreadable"],
+  ["20 scoops", { type: "number", answer: 20 }, "correct"],
+  ["x = 15", { type: "number", answer: 15 }, "correct"],
+  ["2.5 hours", { type: "number", answer: 2.5 }, "correct"],
+  ["18.5km", { type: "number", answer: 18.5 }, "correct"],
+  ["2 to 3", { type: "ratio", answer: [2, 3] }, "correct"],
+  ["4:6", { type: "ratio", answer: [2, 3] }, "unreadable"],
+  ["3:2", { type: "ratio", answer: [2, 3] }, "wrong"],
   ["", { type: "money", answer: 1 }, "unreadable"]
 ];
 spot.forEach(function (s) {

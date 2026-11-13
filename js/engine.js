@@ -76,6 +76,8 @@ window.MP = window.MP || {};
     if (!s) return null;
     var hadPercent = /%|percent/.test(s);
     var hadDollar = /\$|dollar/.test(s);
+    // drop "x =" in front and unit words after (20 scoops, 2.5 hours, 18.5 km)
+    s = s.replace(/^[a-z]{0,3}\s*=\s*/, "").replace(/\s*(?:[a-z]+\.?\s*)+$/, function (m) { return /dollar|percent|cent/.test(m) ? m : ""; });
     s = s.replace(/^=/, "")
       .replace(/dollars?|percent|per\s*cent|\$|%|\s/g, "")
       .replace(/−/g, "-");
@@ -87,9 +89,33 @@ window.MP = window.MP || {};
     return { value: parseFloat(s), hadPercent: hadPercent, hadDollar: hadDollar };
   }
 
+  // "2:3", "2 : 3", "2 to 3", "2/3", "2:3:5" -> [2, 3] / [2, 3, 5]
+  function parseRatio(raw) {
+    var s = String(raw || "").trim().toLowerCase();
+    if (!s) return null;
+    var bits = s.split(/\s*(?::|\bto\b|\/)\s*/);
+    if (bits.length < 2) return null;
+    var nums = bits.map(function (b) { var p = parseNumber(b); return p ? p.value : NaN; });
+    return nums.some(isNaN) ? null : nums;
+  }
+
+  function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { var t = b; b = a % b; a = t; } return a; }
+
   // Returns { status: "correct" | "wrong" | "unreadable", message }
-  // q.type: "money" | "percent" | "number"
+  // q.type: "money" | "percent" | "number" | "ratio"
+  // "unreadable" never uses up a try.
   function check(raw, q) {
+    if (q.type === "ratio") {
+      var got = parseRatio(raw), want = q.answer;
+      if (!got || got.length !== want.length) {
+        return { status: "unreadable", message: "Write the ratio with a colon, like " + want.map(function (_, i) { return i + 2; }).join(":") + "." };
+      }
+      var same = got.every(function (g, i) { return Math.abs(g - want[i]) < 1e-9; });
+      if (same) return { status: "correct" };
+      var equiv = got.every(function (g, i) { return Math.abs(g * want[0] - want[i] * got[0]) < 1e-9; }) && got[0] !== 0;
+      if (equiv) return { status: "unreadable", message: "That ratio is equivalent, but not in simplest form. Divide every part by the same number." };
+      return { status: "wrong" };
+    }
     var p = parseNumber(raw);
     if (!p) {
       return { status: "unreadable", message: "I couldn't read that as a number. Try something like " + example(q) + "." };
@@ -120,6 +146,7 @@ window.MP = window.MP || {};
 
   function example(q) {
     if (q.type === "money") return "12.50 or $12.50";
+    if (q.type === "ratio") return "2:3";
     if (q.type === "percent") return "28 or 28%";
     return "36";
   }
@@ -127,6 +154,8 @@ window.MP = window.MP || {};
   // Text shown for the correct answer
   function answerText(q) {
     if (q.answerText) return q.answerText;
+    if (q.parts) return q.parts.map(function (p) { return p.label + ": " + answerText(p); }).join(", ");
+    if (q.type === "ratio") return q.answer.join(":");
     if (q.type === "money") return F.money(q.answer);
     if (q.type === "percent") return F.pct(q.answer);
     return F.num(q.answer, q.dp === undefined ? 2 : q.dp) + (q.unit ? " " + q.unit : "");
@@ -153,5 +182,7 @@ window.MP = window.MP || {};
   MP.F = F;
   MP.parseNumber = parseNumber;
   MP.check = check;
+  MP.parseRatio = parseRatio;
+  MP.gcd = gcd;
   MP.answerText = answerText;
 })(window.MP);

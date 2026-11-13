@@ -228,3 +228,17 @@ input[type=checkbox] { width: 22px; height: 22px; accent-color: var(--brand); fl
   .ck { min-height: 38px; font-size: 1.05rem; }
   .calc-hist { display: none; }
 }
+
+/* ---------- Answer boxes ---------- */
+.answer { align-items: flex-end; }
+.inputs { flex: 1; display: flex; gap: 10px; flex-wrap: wrap; min-width: 0; }
+.ans-wrap { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 140px; position: relative; }
+.inputs:not(.multi) .ans-wrap { flex-direction: row; align-items: center; }
+.ans-label { font-weight: 600; font-size: .95rem; }
+.ans-input { font-size: 1.3rem !important; }
+.inputs:not(.multi) .ans-input { flex: 1; }
+.ans-unit { color: var(--muted); font-size: .95rem; }
+.inputs.multi .ans-unit { position: absolute; right: 12px; bottom: 12px; pointer-events: none; }
+.ans-input.ok { border-color: var(--good); background: var(--good-bg); }
+.ans-input.no { border-color: var(--bad); background: var(--bad-bg); }
+.ans-input:disabled { background: #f6f3ef; }

@@ -111,13 +111,57 @@
     $("steps").hidden = true;
     $("steps").innerHTML = "";
     $("stepsBtn").textContent = "Show me the steps";
-    $("answer").value = "";
-    $("answer").disabled = false;
+    renderInputs(q);
     $("checkBtn").disabled = false;
     $("skipBtn").hidden = false;
     $("nextBtn").hidden = true;
     renderRoles();
-    $("answer").focus();
+    inputs()[0].focus();
+  }
+
+  // ---------- Answer boxes: one, or one per part (e.g. "Mango" and "Berry") ----------
+  var lastFocused = null;
+  function inputs() { return Array.prototype.slice.call(document.querySelectorAll("#inputs input")); }
+
+  function renderInputs(q) {
+    var box = $("inputs");
+    box.innerHTML = "";
+    var parts = q.parts || [q];
+    box.className = "inputs" + (q.parts ? " multi" : "");
+    parts.forEach(function (p, i) {
+      var wrap = document.createElement("label");
+      wrap.className = "ans-wrap";
+      if (q.parts) {
+        var cap = document.createElement("span");
+        cap.className = "ans-label";
+        cap.textContent = p.label;
+        wrap.appendChild(cap);
+      }
+      var inp = document.createElement("input");
+      inp.className = "ans-input";
+      inp.autocomplete = "off";
+      inp.spellcheck = false;
+      inp.placeholder = p.type === "ratio" ? "e.g. 2:3" : (q.parts ? "Answer" : "Your answer");
+      inp.setAttribute("aria-label", q.parts ? p.label : "Your answer");
+      inp.addEventListener("focus", function () { lastFocused = inp; });
+      if (i === 0) inp.id = "answer";
+      wrap.appendChild(inp);
+      if (p.unit && p.type === "number") {
+        var u = document.createElement("span");
+        u.className = "ans-unit";
+        u.textContent = p.unit;
+        wrap.appendChild(u);
+      }
+      box.appendChild(wrap);
+    });
+    lastFocused = null;
+  }
+
+  // the box the calculator's "Put in my answer" fills
+  function answerTarget() {
+    var list = inputs();
+    if (lastFocused && list.indexOf(lastFocused) >= 0) return lastFocused;
+    return list.filter(function (i) { return !i.value; })[0] || list[0];
   }
 
   function renderRoles() {
@@ -135,7 +179,7 @@
       state.stats.correct++;
       if (state.tries === 0 && !state.stepsSeen) state.stats.firstTry++;
     }
-    $("answer").disabled = true;
+    inputs().forEach(function (i) { i.disabled = true; });
     $("checkBtn").disabled = true;
     $("skipBtn").hidden = true;
     $("nextBtn").hidden = false;
@@ -149,9 +193,20 @@
   function onCheck(e) {
     e.preventDefault();
     if (state.done || !state.q) return;
-    var input = $("answer").value;
-    var res = MP.check(input, state.q);
     var fb = $("feedback");
+    var parts = state.q.parts || [state.q];
+    var boxes = inputs();
+    var results = parts.map(function (p, i) {
+      if (!boxes[i].value.trim()) return { status: "unreadable", message: parts.length > 1 ? "Fill in every box." : "Type your answer first." };
+      return MP.check(boxes[i].value, p);
+    });
+    var unreadable = results.filter(function (r) { return r.status === "unreadable"; })[0];
+    var res = unreadable || (results.every(function (r) { return r.status === "correct"; }) ? { status: "correct" } :
+      { status: "wrong", message: results.map(function (r) { return r.message; }).filter(Boolean)[0] });
+    boxes.forEach(function (b, i) {
+      b.classList.remove("ok", "no");
+      if (parts.length > 1 && results[i].status !== "unreadable") b.classList.add(results[i].status === "correct" ? "ok" : "no");
+    });
 
     if (res.status === "unreadable") {
       fb.className = "feedback info";
@@ -169,9 +224,10 @@
     state.tries++;
     if (state.tries < MAX_TRIES) {
       fb.className = "feedback warn";
-      fb.innerHTML = "❌ <b>Not quite.</b> " + (res.message || "Check your work and try once more.") +
+      fb.innerHTML = "❌ <b>Not quite.</b> " + (res.message || (parts.length > 1 ? "Fix the box marked in red." : "Check your work and try once more.")) +
         " <span class='note'>(1 try left)</span>";
-      $("answer").select();
+      var firstWrong = boxes.filter(function (b, i) { return results[i].status !== "correct"; })[0] || boxes[0];
+      firstWrong.select();
       return;
     }
     fb.className = "feedback bad";
@@ -214,7 +270,7 @@
   if (params.get("calc") === "0") {
     $("calcToggle").hidden = true;
   } else {
-    MP.calc.mount({ host: $("layout"), toggle: $("calcToggle"), answerBox: $("answer"), layout: $("layout") });
+    MP.calc.mount({ host: $("layout"), toggle: $("calcToggle"), getAnswerBox: answerTarget, layout: $("layout") });
   }
 
   MP.state = state;
